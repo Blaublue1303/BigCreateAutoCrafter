@@ -3,11 +3,11 @@
 ## Ziel
 Der Stock-Keeper-Craftingablauf (JEI "+" → Zutaten anfordern → Pakete → Crafter) soll auch für **größere verbundene Mechanical-Crafter-Anlagen** (z. B. 5×5, 4×6, 9×9) funktionieren – serverseitig validiert, kompatibel mit dem unveränderten 3×3-Verhalten.
 
-## Benutzerbedienung (Soll)
-1. Spieler baut Crafter-Anlage, verbindet sie (Create-Standard) und legt einen **Profil-Eintrag** an: Wrench-Rechtsklick auf Crafter-Controller (oder `/bcac profile create <name>`), Mod scannt die Gruppe → Profil `{name, Breite, Höhe, Maske, Packager-Adresse}`.
-2. Im Stock-Keeper-Screen erscheint neben der Suchleiste ein **Profil-Auswahlbutton** (Standard: "3×3 / Create-Standard").
-3. JEI öffnet ein Rezept (auch `create:mechanical_crafting`), Klick auf "+" → unser Handler legt den Eintrag in `recipesToOrder` an und konvertiert das Rezept auf das aktive Profil.
-4. "Anfordern" sendet die Order; Server validiert, Pakete laufen zur Adresse des Profils.
+## Benutzerbedienung (Soll, Stand Nutzerwunsch)
+1. **Profil anlegen:** Strg + Rechtsklick auf einen Mechanical Crafter. Der Client erkennt die Taste und sendet ein Payload; der Server scannt die verbundene Crafter-Gruppe und legt ein neues **Profil** an (Name per Eingabe, Adresse des Packagers).
+2. **Mehrere Bereiche pro Profil:** Ein Profil ist eine ganze Anlage und enthält mehrere **Bereiche** (Regions). Beispiel: Anlage mit 21 Crafter-Feldern. Erst wählt man den großen Bereich (alle 21), danach per weiterem Strg + Rechtsklick auf einen anderen Crafter / Teilgruppe einen kleinen **3×3-Bereich**, in dem kleine Rezepte gecraftet werden.
+3. **Im Stock-Keeper-Screen:** Profil-Auswahl neben der Suchleiste, darunter Bereichsauswahl. Standard "Automatisch": der **kleinste passende Bereich** wird für das Rezept genommen (3×3-Rezept → 3×3-Bereich, 5×4-Rezept → großer Bereich). Manuelle Wahl überschreibt.
+4. JEI "+" legt den Eintrag an, der Rezept-Konverter nutzt den gewählten Bereich, "Anfordern" sendet die Order, der Server validiert.
 
 ## Architektur-Entscheidung
 - **Variante A (bevorzugt, ohne Mixin):** eigener JEI-`IRecipeTransferHandler` für `StockKeeperRequestMenu` (Priorität vor Create, siehe R2) + eigener Auftrag über dieselbe `PackageOrderRequestPacket`-Kette, aber mit selbst erzeugtem Muster. Der Create-`CrafterUnpackingHandler` lässt sich nicht ersetzen (`register` wirft bei Duplikaten). Deshalb wird das Muster so erzeugt, dass die Create-Zuordnung (Muster-Index i ↔ Inventar i aus `getInventories()`) bereits korrekt ist: Rezept in Row-Major-Reihenfolge der Profil-Maske abbilden. Damit bleibt `CrafterUnpackingHandler` unangetastet.
@@ -28,7 +28,8 @@ Der Stock-Keeper-Craftingablauf (JEI "+" → Zutaten anfordern → Pakete → Cr
 | `.mixin` | nur Variante B | beide |
 
 ## Datenmodelle
-- `CrafterProfile{ UUID id, String name, int width, int height, boolean[] mask, BlockPos controller, ResourceKey<Level> dim, String address, UUID owner }`
+- `CrafterProfile{ UUID id, String name, ResourceKey<Level> dim, String address, UUID owner, List<CrafterRegion> regions }`
+- `CrafterRegion{ String name, BlockPos controller, int width, int height, boolean[] mask }` (Bereich = eine verbundene Create-Crafter-Gruppe bzw. ein Teil davon, siehe R12)
 - `GridRecipe{ int w, h, List<Ingredient> cells }` aus `ShapedRecipe`/`MechanicalCraftingRecipe` (`getWidth/getHeight/getIngredients`); Shapeless → Row-Major füllen.
 - Persistenz: `SavedData` (Codec), Sync per Payload; Datapack-Unterstützung optional: Profile aus `data/<ns>/bcac_profiles/*.json` (Phase 8).
 

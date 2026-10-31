@@ -15,6 +15,8 @@ Gesamteinschätzung: **machbar**, da die Crafter-Seite (Create) bereits beliebig
 | R9 | Lizenz: Create/JEI-Code nicht kopieren | – | hoch | nur Interop, kein eingechecktes Fremdcode, `libs/` ist gitignored |
 | R10 | Mojang-Mappings/Parchment-Lizenz | niedrig | niedrig | im README erwähnt |
 | R11 | Fehlerhafte Annahme "blauer Button = JEI" | niedrig | mittel | im Spiel verifizieren (T1); Code zeigt keinen Create-Plus-Button |
+| R12 | **Kleiner Bereich innerhalb einer großen Crafter-Gruppe:** Create startet eine Gruppe nur, wenn alle ihre Crafter belegt sind (`RecipeGridHandler.getAllCraftersOfChainIf`: leere Crafter → `null`, außer bei `poweredStart`). Ein 3×3-Rezept in einer 21er-Gruppe würde deshalb blockieren, solange die übrigen 12 leer sind. | hoch | hoch | Kleiner Bereich muss eine **eigene verbundene Gruppe** sein (getrennt per Wrench/Create-Verbindung) *oder* Redstone-Start nutzen; Test T5; Profil-Scan prüft, ob Bereiche disjunkte Gruppen sind |
+| R13 | Strg + Rechtsklick: Strg-Status nur clientseitig, auf macOS ist Strg+Klick = Rechtsklick; Konflikt mit Create-Wrench/anderen Mods | mittel | niedrig | Taste konfigurierbar, Server validiert Block, Reichweite und Rechte; Alternative: Create-Wrench-Interaktion |
 
 ## Verifizierungsstatus der Annahmen
 - Aus Code belegt: L1–L8, Aufrufkette, Registry-Duplikat-Exception, JEI-Handler-Registrierung.
