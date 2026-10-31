@@ -10,6 +10,7 @@ Quelle: `CreateExta+-2.0.zip` (CurseForge-Modpack, `manifestType: minecraftModpa
 | Minecraft | 1.21.1 | `manifest.json` |
 | NeoForge | 21.1.250 | `manifest.json` (`neoforge-21.1.250`) |
 | Create | **6.0.10** (`create-1.21.1-6.0.10.jar`) | CurseForge-Fileinfo zu projectID 328085 / fileID 7963363; Größe 19123767 B identisch mit der Modrinth-JAR (SHA-1 `0e97e498…acc353`) |
+| Create als Maven-Artefakt | `com.simibubi.create:create-1.21.1:6.0.10-280`: gleicher Git-Commit `ac0c444d`, alle 2692 Klassen byte-identisch mit der Pack-JAR | Manifest-Vergleich + `diff -r` |
 | Create Mod-ID | `create` | `META-INF/neoforge.mods.toml` der JAR |
 | JEI Mod-ID | `jei` | JAR |
 | Storage-/Stock-Keeper-System | **Teil von Create 6.0.x** ("Stock Keeper", Block `StockTicker`, Paket `com.simibubi.create.content.logistics.stockTicker`). Keine separate Mod. | Klassen in der Create-JAR; `create-client.toml` erwähnt "Stock Keepers" |

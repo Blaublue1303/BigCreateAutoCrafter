@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Downloads the exact reference JARs (Create 6.0.10, JEI) from Modrinth into libs/ and verifies checksums.
+# Analysis helper only (the build uses Maven): downloads the reference JARs (Create 6.0.10, JEI) from
+# Modrinth into libs/ for decompiling and verifies checksums.
 # libs/ is git-ignored (third-party binaries are never committed).
 set -euo pipefail
 cd "$(dirname "$0")/.."

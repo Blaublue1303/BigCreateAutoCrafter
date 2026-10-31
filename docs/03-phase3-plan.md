@@ -15,21 +15,24 @@ Der Stock-Keeper-Craftingablauf (JEI "+" → Zutaten anfordern → Pakete → Cr
 - Entscheidung erst nach Prototyp-Test T3 (Paket mit >9 Muster-Einträgen).
 
 ## Pakete / Klassen (`com.blaublue1303.bigcreateautocrafter`)
+✅ = im Gerüst vorhanden, ⬜ = folgt (Nummer = Schritt in docs/06-todo.md)
+
 | Paket | Klassen | Seite |
 |---|---|---|
-| `.` | `BigCreateAutoCrafter` (Entry), `Config` | beide |
-| `.profile` | `CrafterProfile` (record), `ProfileManager` (SavedData pro Level), `ProfileScanner` | Server |
-| `.net` | `ProfileSyncPayload`, `ProfileCreatePayload`, `ProfileSelectPayload`, `OrderValidationPayload` (NeoForge Payload-API) | beide |
-| `.recipe` | `GridRecipe` (W×H, `List<Ingredient>`), `RecipeConverter` (Rezept→Profil-Muster) | beide |
-| `.order` | `OrderPlanner` (Bestand→Zutatenzuordnung, Paketaufteilung ≤9 Slots), `OrderValidator` | Server (Planer auch Client zur Anzeige) |
-| `.client` | `ProfileButton`, `ClientEvents`, `BigTransferHandler` | Client |
-| `.compat.jei` | `JeiPlugin` (`@JeiPlugin`) | Client |
-| `.compat.create` | Zugriff auf Create-Klassen (nur hier importieren) | beide |
-| `.mixin` | nur Variante B | beide |
+| `.` | ✅ `BigCreateAutoCrafter` (Entry), ✅ `Config` (Server-Config) | beide |
+| `.profile` | ✅ `CrafterRegion`, ✅ `CrafterProfile`, ✅ `ProfileManager` (SavedData), ✅ `ProfileSync`; ⬜ `ProfileService` (5) | Server |
+| `.net` | ✅ `BcacNetwork`, ✅ `SyncProfilesPayload`; ⬜ `CreateProfilePayload`, `AddRegionPayload` (5), `CraftOrderPayload` (8) | beide |
+| `.recipe` | ⬜ `GridRecipe`, `RecipeConverter` (6) | beide |
+| `.order` | ⬜ `OrderPlanner` (7), `OrderValidator` (8) | Server (Planer auch Client) |
+| `.client` | ✅ `BigCreateAutoCrafterClient`, ✅ `BcacKeyMappings`, ✅ `ClientProfileCache`; ⬜ `CrafterClickHandler` (5), `ProfileButton` (10) | Client |
+| `.compat.create` | ✅ `CreateCompat`, ✅ `ConnectedCrafterGroup` (einziger Zugriff auf Create-Interna) | beide |
+| `.compat.jei` | ✅ `BcacJeiPlugin` (noch ohne Handler); ⬜ `BigTransferHandler` (9) | Client |
+| `.mixin` | ✅ `ConnectedInputAccessor`; weitere nur bei Variante B | beide |
+| `.gametest` | ✅ `CreateCompatGameTests`, ✅ `ProfileCodecGameTests` | Server (nur Testmodus) |
 
 ## Datenmodelle
 - `CrafterProfile{ UUID id, String name, ResourceKey<Level> dim, String address, UUID owner, List<CrafterRegion> regions }`
-- `CrafterRegion{ String name, BlockPos controller, int width, int height, boolean[] mask }` (Bereich = eine verbundene Create-Crafter-Gruppe bzw. ein Teil davon, siehe R12)
+- `CrafterRegion{ String name, BlockPos controller, Direction facing, List<String> layout }`. `layout` sind Zeilen von oben nach unten, `#` = Crafter, `.` = Lücke (lesbar in NBT und später in Datapack-JSON). Ein Bereich ist im Gerüst eine ganze verbundene Create-Gruppe. Teilbereiche lassen sich später als optionales Feld ergänzen, ohne gespeicherte Daten zu brechen (R12).
 - `GridRecipe{ int w, h, List<Ingredient> cells }` aus `ShapedRecipe`/`MechanicalCraftingRecipe` (`getWidth/getHeight/getIngredients`); Shapeless → Row-Major füllen.
 - Persistenz: `SavedData` (Codec), Sync per Payload; Datapack-Unterstützung optional: Profile aus `data/<ns>/bcac_profiles/*.json` (Phase 8).
 

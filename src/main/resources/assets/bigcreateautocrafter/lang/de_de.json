@@ -1,0 +1,13 @@
+{
+  "key.categories.bigcreateautocrafter": "Big Create Auto Crafter",
+  "key.bigcreateautocrafter.profile_modifier": "Crafter-Profil (halten + Rechtsklick auf Crafter)",
+
+  "bigcreateautocrafter.configuration.title": "Big Create Auto Crafter",
+  "bigcreateautocrafter.configuration.section.bigcreateautocrafter.server.toml": "Server-Einstellungen",
+  "bigcreateautocrafter.configuration.section.bigcreateautocrafter.server.toml.title": "Server-Einstellungen",
+  "bigcreateautocrafter.configuration.maxRegionWidth": "Max. Bereichsbreite",
+  "bigcreateautocrafter.configuration.maxRegionHeight": "Max. Bereichshöhe",
+  "bigcreateautocrafter.configuration.maxRegionsPerProfile": "Max. Bereiche pro Profil",
+  "bigcreateautocrafter.configuration.maxProfilesPerPlayer": "Max. Profile pro Spieler",
+  "bigcreateautocrafter.configuration.autoSelectSmallestRegion": "Kleinsten passenden Bereich automatisch wählen"
+}

@@ -1,1 +1,13 @@
-{ "mod.bigcreateautocrafter.name": "Big Create Auto Crafter" }
+{
+  "key.categories.bigcreateautocrafter": "Big Create Auto Crafter",
+  "key.bigcreateautocrafter.profile_modifier": "Crafter profile (hold + right-click crafter)",
+
+  "bigcreateautocrafter.configuration.title": "Big Create Auto Crafter",
+  "bigcreateautocrafter.configuration.section.bigcreateautocrafter.server.toml": "Server settings",
+  "bigcreateautocrafter.configuration.section.bigcreateautocrafter.server.toml.title": "Server settings",
+  "bigcreateautocrafter.configuration.maxRegionWidth": "Max region width",
+  "bigcreateautocrafter.configuration.maxRegionHeight": "Max region height",
+  "bigcreateautocrafter.configuration.maxRegionsPerProfile": "Max regions per profile",
+  "bigcreateautocrafter.configuration.maxProfilesPerPlayer": "Max profiles per player",
+  "bigcreateautocrafter.configuration.autoSelectSmallestRegion": "Auto-select smallest fitting region"
+}
