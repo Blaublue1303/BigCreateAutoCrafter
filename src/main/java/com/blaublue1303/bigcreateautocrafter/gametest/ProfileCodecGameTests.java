@@ -24,12 +24,14 @@ import net.neoforged.neoforge.network.connection.ConnectionType;
 @GameTestHolder(BigCreateAutoCrafter.MODID)
 @PrefixGameTestTemplate(false)
 public class ProfileCodecGameTests {
-    private static CrafterProfile sampleProfile() {
-        return new CrafterProfile(UUID.randomUUID(), "Hauptanlage", Level.OVERWORLD, "crafting", UUID.randomUUID(), List.of(
-                new CrafterRegion("Groß", new BlockPos(10, 64, -3), Direction.NORTH,
-                        List.of("#####", "#####", "#####", "###..", "###..")),
-                new CrafterRegion("3x3", new BlockPos(20, 64, -3), Direction.EAST,
-                        List.of("###", "###", "###"))));
+    /** 5×5 without corners = 21 crafters, the shape of Create's crushing wheel recipe. */
+    static final List<String> LAYOUT_21 = List.of(".###.", "#####", "#####", "#####", ".###.");
+    static final List<String> LAYOUT_3X3 = List.of("###", "###", "###");
+
+    static CrafterProfile sampleProfile() {
+        return new CrafterProfile(UUID.randomUUID(), "Hauptanlage", Level.OVERWORLD, UUID.randomUUID(), List.of(
+                new CrafterRegion("Groß", new BlockPos(10, 64, -3), Direction.NORTH, LAYOUT_21, "crafter_gross"),
+                new CrafterRegion("3x3", new BlockPos(20, 64, -3), Direction.EAST, LAYOUT_3X3, "")));
     }
 
     @GameTest(template = "empty7")
@@ -49,7 +51,9 @@ public class ProfileCodecGameTests {
         CrafterRegion big = profile.regions().get(0);
         helper.assertTrue(big.width() == 5 && big.height() == 5 && big.crafterCount() == 21,
                 "Unexpected size of 21-crafter region: " + big.width() + "x" + big.height() + ", " + big.crafterCount());
-        helper.assertTrue(big.hasCrafterAt(0, 0) && !big.hasCrafterAt(4, 4), "hasCrafterAt is wrong");
+        helper.assertTrue(!big.hasCrafterAt(0, 0) && big.hasCrafterAt(1, 0) && !big.hasCrafterAt(4, 4), "hasCrafterAt is wrong");
+        helper.assertTrue(CrafterRegion.sizeLabel(LAYOUT_21).equals("5×5 (21)") && CrafterRegion.sizeLabel(LAYOUT_3X3).equals("3×3"),
+                "Unexpected size labels");
         helper.succeed();
     }
 
@@ -57,16 +61,17 @@ public class ProfileCodecGameTests {
     public static void invalidRegionsAreRejected(GameTestHelper helper) {
         BlockPos pos = BlockPos.ZERO;
         List<CrafterRegion> invalid = List.of(
-                new CrafterRegion("ragged", pos, Direction.NORTH, List.of("###", "##")),
-                new CrafterRegion("bad char", pos, Direction.NORTH, List.of("#x#")),
-                new CrafterRegion("no crafter", pos, Direction.NORTH, List.of("...")),
-                new CrafterRegion("empty", pos, Direction.NORTH, List.of()),
-                new CrafterRegion("vertical", pos, Direction.UP, List.of("#")),
-                new CrafterRegion(" ", pos, Direction.NORTH, List.of("#")));
+                new CrafterRegion("ragged", pos, Direction.NORTH, List.of("###", "##"), ""),
+                new CrafterRegion("bad char", pos, Direction.NORTH, List.of("#x#"), ""),
+                new CrafterRegion("no crafter", pos, Direction.NORTH, List.of("..."), ""),
+                new CrafterRegion("empty", pos, Direction.NORTH, List.of(), ""),
+                new CrafterRegion("vertical", pos, Direction.UP, List.of("#"), ""),
+                new CrafterRegion(" ", pos, Direction.NORTH, List.of("#"), ""),
+                new CrafterRegion("long address", pos, Direction.NORTH, List.of("#"), "x".repeat(CrafterRegion.MAX_ADDRESS_LENGTH + 1)));
         for (CrafterRegion region : invalid) {
             helper.assertTrue(CrafterRegion.validate(region).error().isPresent(), "Region should be invalid: " + region);
         }
-        helper.assertTrue(CrafterRegion.validate(new CrafterRegion("ok", pos, Direction.SOUTH, List.of("#.#"))).result().isPresent(),
+        helper.assertTrue(CrafterRegion.validate(new CrafterRegion("ok", pos, Direction.SOUTH, List.of("#.#"), "a")).result().isPresent(),
                 "Valid region rejected");
         helper.succeed();
     }

@@ -15,18 +15,21 @@ import net.minecraft.network.codec.StreamCodec;
 /**
  * One craftable area of a {@link CrafterProfile}: exactly one connected Create Mechanical Crafter group.
  *
- * <p>Example: a large setup with 21 crafters is one region, a separate 3×3 group next to it is a second
- * region of the same profile. (A region always being a whole Create group follows risk R12 in docs/04-risks.md;
- * sub-areas of one group can be added later as an optional field without breaking saved data.)
+ * <p>Example: a large setup with 21 crafters is one region, a separate 3×3 group next to it is a second region of
+ * the same profile. Small recipes also work inside a large region (Create starts a crafter group that was filled by a
+ * package like a redstone start, empty crafters allowed), so a separate 3×3 group is optional.
  *
- * @param name       display name chosen by the player
+ * @param name       display name
  * @param controller position of the group's controller crafter (Create {@code ConnectedInput} controller)
  * @param facing     horizontal facing of the crafters in the group
- * @param layout     rows from top to bottom in Create's inventory order; {@code '#'} = crafter, {@code '.'} = gap.
- *                   Column direction relative to the viewer still has to be verified in-game (docs/06-todo.md, T5).
+ * @param layout     rows from top to bottom; {@code '#'} = crafter, {@code '.'} = gap. Reading the {@code '#'} cells row
+ *                   by row gives exactly Create's crafter inventory order ({@code ConnectedInput.getInventories}), which
+ *                   is the order Create's crafter unpacking handler fills recipe pattern slots in.
+ * @param address    Create package address of the packager feeding this crafter group; empty = not set
  */
-public record CrafterRegion(String name, BlockPos controller, Direction facing, List<String> layout) {
+public record CrafterRegion(String name, BlockPos controller, Direction facing, List<String> layout, String address) {
     public static final int MAX_NAME_LENGTH = 32;
+    public static final int MAX_ADDRESS_LENGTH = 64;
     public static final char CRAFTER = '#';
     public static final char GAP = '.';
 
@@ -34,7 +37,8 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
             Codec.STRING.fieldOf("name").forGetter(CrafterRegion::name),
             BlockPos.CODEC.fieldOf("controller").forGetter(CrafterRegion::controller),
             Direction.CODEC.fieldOf("facing").forGetter(CrafterRegion::facing),
-            Codec.STRING.listOf().fieldOf("layout").forGetter(CrafterRegion::layout)
+            Codec.STRING.listOf().fieldOf("layout").forGetter(CrafterRegion::layout),
+            Codec.STRING.optionalFieldOf("address", "").forGetter(CrafterRegion::address)
     ).apply(i, CrafterRegion::new)).validate(CrafterRegion::validate);
 
     public static final StreamCodec<ByteBuf, CrafterRegion> STREAM_CODEC = StreamCodec.composite(
@@ -42,6 +46,7 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
             BlockPos.STREAM_CODEC, CrafterRegion::controller,
             Direction.STREAM_CODEC, CrafterRegion::facing,
             ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), CrafterRegion::layout,
+            ByteBufCodecs.STRING_UTF8, CrafterRegion::address,
             CrafterRegion::new);
 
     public CrafterRegion {
@@ -62,7 +67,7 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
         return y >= 0 && y < height() && x >= 0 && x < width() && layout.get(y).charAt(x) == CRAFTER;
     }
 
-    /** @return number of crafters in this region */
+    /** @return number of crafters in this region (= length of a recipe pattern for this region) */
     public int crafterCount() {
         int count = 0;
         for (String row : layout) {
@@ -75,9 +80,23 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
         return count;
     }
 
+    public CrafterRegion withAddress(String newAddress) {
+        return new CrafterRegion(name, controller, facing, layout, newAddress);
+    }
+
+    /** Short label like {@code 5×5 (21)} used for auto-generated names. */
+    public static String sizeLabel(List<String> layout) {
+        CrafterRegion probe = new CrafterRegion("probe", BlockPos.ZERO, Direction.NORTH, layout, "");
+        String size = probe.width() + "×" + probe.height();
+        return probe.crafterCount() == probe.width() * probe.height() ? size : size + " (" + probe.crafterCount() + ")";
+    }
+
     public static DataResult<CrafterRegion> validate(CrafterRegion region) {
         if (region.name().isBlank() || region.name().length() > MAX_NAME_LENGTH) {
             return DataResult.error(() -> "Region name must be 1-" + MAX_NAME_LENGTH + " characters: '" + region.name() + "'");
+        }
+        if (region.address().length() > MAX_ADDRESS_LENGTH) {
+            return DataResult.error(() -> "Region address must be at most " + MAX_ADDRESS_LENGTH + " characters");
         }
         if (!region.facing().getAxis().isHorizontal()) {
             return DataResult.error(() -> "Region facing must be horizontal: " + region.facing());

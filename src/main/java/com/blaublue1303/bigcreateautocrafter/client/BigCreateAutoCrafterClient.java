@@ -17,6 +17,14 @@ public class BigCreateAutoCrafterClient {
     public BigCreateAutoCrafterClient(IEventBus modEventBus, ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         modEventBus.addListener(BcacKeyMappings::register);
-        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientProfileCache.clear());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
+            ClientProfileCache.clear();
+            ClientPlacements.clear();
+        });
+        NeoForge.EVENT_BUS.addListener(CrafterClickHandler::onClientTick);
+        NeoForge.EVENT_BUS.addListener(CrafterClickHandler::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(ProfileSelector::onInit);
+        NeoForge.EVENT_BUS.addListener(ProfileSelector::onRender);
+        NeoForge.EVENT_BUS.addListener(ProfileSelector::onMouseClicked);
     }
 }

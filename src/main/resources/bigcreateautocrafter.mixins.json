@@ -4,7 +4,12 @@
   "package": "com.blaublue1303.bigcreateautocrafter.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ConnectedInputAccessor"
+    "ConnectedInputAccessor",
+    "CrafterUnpackingHandlerMixin",
+    "PackageRepackageHelperMixin"
+  ],
+  "client": [
+    "client.StockKeeperRequestScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
