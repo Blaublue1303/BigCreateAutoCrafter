@@ -38,3 +38,6 @@ run/
 **/src/generated/**/.cache/
 repo/
 !**/src/**/repo/
+
+### Dev reference JARs (third-party, never commit) ###
+libs/*.jar

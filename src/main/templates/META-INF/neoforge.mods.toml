@@ -42,11 +42,11 @@ displayName="${mod_name}" #mandatory
 #credits="" #optional
 
 # The authors of the mod, displayed in the mod UI (optional)
-#authors=""
+authors="blaublue1303"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Example mod description.
+Extends the Create Stock Keeper crafting workflow to larger Mechanical Crafter setups.
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
