@@ -15,9 +15,14 @@ Gesamteinschätzung: **machbar**, da die Crafter-Seite (Create) bereits beliebig
 | R9 | Lizenz: Create/JEI-Code nicht kopieren | – | hoch | nur Interop, kein eingechecktes Fremdcode, `libs/` ist gitignored |
 | R10 | Mojang-Mappings/Parchment-Lizenz | niedrig | niedrig | im README erwähnt |
 | R11 | Fehlerhafte Annahme "blauer Button = JEI" | niedrig | mittel | im Spiel verifizieren (T1); Code zeigt keinen Create-Plus-Button |
-| R12 | **Kleiner Bereich innerhalb einer großen Crafter-Gruppe:** Create startet eine Gruppe nur, wenn alle ihre Crafter belegt sind (`RecipeGridHandler.getAllCraftersOfChainIf`: leere Crafter → `null`, außer bei `poweredStart`). Ein 3×3-Rezept in einer 21er-Gruppe würde deshalb blockieren, solange die übrigen 12 leer sind. | hoch | hoch | Kleiner Bereich muss eine **eigene verbundene Gruppe** sein (getrennt per Wrench/Create-Verbindung) *oder* Redstone-Start nutzen; Test T5; Profil-Scan prüft, ob Bereiche disjunkte Gruppen sind |
+| R12 | ~~Kleiner Bereich in großer Gruppe blockiert~~: **geklärt.** `CrafterUnpackingHandler` ruft `checkCompletedRecipe(true)` (wie ein Redstone-Start), leere Crafter sind erlaubt, das Rezept ergibt sich aus der Bounding-Box der belegten Crafter | – | – | Kleine Rezepte gehen auch in große Bereiche, eigene 3×3-Gruppen sind optional |
 | R13 | Strg + Rechtsklick: Strg-Status nur clientseitig, auf macOS ist Strg+Klick = Rechtsklick; Konflikt mit Create-Wrench/anderen Mods | mittel | niedrig | Taste konfigurierbar, Server validiert Block, Reichweite und Rechte; Alternative: Create-Wrench-Interaktion |
+| R14 | Ein Craft mit mehr als 9 Paket-Slots (unstapelbare Zutaten) wird auf mehrere Pakete verteilt. Kommen Pakete verschiedener Crafts vermischt an, nimmt Creates Entpacker das zweite Paket nicht an, und der Packager wartet | niedrig | mittel | Pakete werden pro Craft hintereinander exportiert, der Crafter startet erst bei vollem Raster. Später: Entpacker toleranter machen |
+| R15 | Create erlaubt höchstens 9 verschiedene Itemtypen pro Auftrag (L3) | sicher | niedrig | Für Prototyp 1 akzeptiert, die meisten großen Rezepte haben weniger Typen |
+| R16 | Mixins in Create-Interna (`StockKeeperRequestScreen.sendIt`, `PackageRepackageHelper`, `CrafterUnpackingHandler`) | mittel bei Create-Updates | hoch | Versionsbereich `[6.0.10,6.1)`, `defaultRequire = 1` (Fehler fallen beim Start auf), GameTests und Smoke-Test |
 
 ## Verifizierungsstatus der Annahmen
 - Aus Code belegt: L1–L8, Aufrufkette, Registry-Duplikat-Exception, JEI-Handler-Registrierung.
-- **Nur abgeleitet, nicht getestet:** Teilpakete (R3), Codec ohne Längenlimit für `PackageOrder`, Verhalten bei Lücken, Button-Farbzustand.
+- Durch GameTests belegt: Muster > 9 über das Netzwerk (T3); Paketierung; Entpacken in die richtigen Crafter einer 21er-Gruppe; Teilpakete starten erst bei vollem Raster (T4); Strg-Rechtsklick-Ablauf.
+- Im Client belegt (Smoke-Test): Client-Mixin wird angewendet, Profil-Sync, JEI wählt unseren Handler (T2), das Crushing Wheel mit 21 Zutaten wird angenommen.
+- **Noch nicht getestet:** echter Crafting-Durchlauf mit Rotation und Paketwegen; Farbzustand des Buttons (T1); Tooltip-Darstellung; Konflikte mit anderen Pack-Mods (R7).

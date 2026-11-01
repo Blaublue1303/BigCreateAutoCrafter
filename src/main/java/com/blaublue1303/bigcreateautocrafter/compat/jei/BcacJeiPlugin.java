@@ -14,6 +14,7 @@ import mezz.jei.api.gui.handlers.IGlobalGuiHandler;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
+import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.CraftingRecipe;
@@ -53,5 +54,15 @@ public class BcacJeiPlugin implements IModPlugin {
                 return ProfileSelector.extraAreas();
             }
         });
+    }
+
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
+        JeiRuntimeHolder.set(jeiRuntime);
+    }
+
+    @Override
+    public void onRuntimeUnavailable() {
+        JeiRuntimeHolder.set(null);
     }
 }

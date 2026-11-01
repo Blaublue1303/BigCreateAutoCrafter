@@ -1,6 +1,7 @@
 package com.blaublue1303.bigcreateautocrafter.client;
 
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
+import com.blaublue1303.bigcreateautocrafter.client.smoketest.ClientSmokeTest;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -26,5 +27,10 @@ public class BigCreateAutoCrafterClient {
         NeoForge.EVENT_BUS.addListener(ProfileSelector::onInit);
         NeoForge.EVENT_BUS.addListener(ProfileSelector::onRender);
         NeoForge.EVENT_BUS.addListener(ProfileSelector::onMouseClicked);
+        if (ClientSmokeTest.enabled()) {
+            NeoForge.EVENT_BUS.addListener(ClientSmokeTest::onClientTick);
+            NeoForge.EVENT_BUS.addListener(ClientSmokeTest::onScreenOpening);
+            NeoForge.EVENT_BUS.addListener(ClientSmokeTest::onScreenClosing);
+        }
     }
 }

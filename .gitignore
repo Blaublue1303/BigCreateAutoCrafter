@@ -41,3 +41,4 @@ repo/
 
 ### Dev reference JARs (third-party, never commit) ###
 libs/*.jar
+run-smoketest/

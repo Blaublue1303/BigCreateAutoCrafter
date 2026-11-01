@@ -114,6 +114,14 @@ neoForge {
         gameTestServer {
             logLevel = org.slf4j.event.Level.INFO
         }
+
+        // Automated client check (needs a display, e.g. `xvfb-run ./gradlew runClientSmokeTest`), see ClientSmokeTest.
+        clientSmokeTest {
+            client()
+            gameDirectory = project.file('run-smoketest')
+            systemProperty 'bigcreateautocrafter.clientSmokeTest', 'true'
+            logLevel = org.slf4j.event.Level.INFO
+        }
     }
 
     mods {

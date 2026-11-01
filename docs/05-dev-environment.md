@@ -19,19 +19,21 @@ Ponder wird mit `transitive = false` eingebunden, weil seine POM sonst Flywheel 
 ## Befehle
 - `./gradlew build`: kompiliert gegen Create und JEI und baut `build/libs/bigcreateautocrafter-0.0.1.jar`.
 - `./gradlew runGameTestServer`: startet einen headless Server mit Create, Ponder, Flywheel, Registrate, JEI und der Mod, führt alle GameTests aus und beendet sich mit dem Ergebnis als Exit-Code. **Läuft lokal und in der CI.**
-- `./gradlew runClient` / `runServer`: manuelles Testen. Der Client braucht ein Display und wurde in der Cloud-Umgebung nicht gestartet. `runServer` verlangt `run/eula.txt`.
+- `xvfb-run ./gradlew runClientSmokeTest` (Linux ohne Display; mit Display reicht `./gradlew runClientSmokeTest`): automatischer Client-Test in eigenem Ordner `run-smoketest/`. Er legt eine Flachwelt an, baut eine 21er-Crafter-Gruppe, legt über dieselbe Serverlogik wie Strg + Rechtsklick ein Profil an und öffnet einen echten Stock-Keeper-Screen. Dann prüft er die JEI-Handler und macht einen Screenshot. Das Ergebnis steht in `run-smoketest/bcac-smoketest.txt` (`RESULT PASS/FAIL`). Nicht in der CI.
+- `./gradlew runClient` / `runServer`: manuelles Testen. `runServer` verlangt `run/eula.txt`.
 
-## GameTests (`src/main/java/.../gametest`, Arena `data/bigcreateautocrafter/structure/empty7.nbt`)
-| Test | prüft |
+## GameTests (`src/main/java/.../gametest`, Arena `data/bigcreateautocrafter/structure/empty7.nbt`), 15 Tests
+| Klasse | prüft |
 |---|---|
-| `singleCrafterIsItsOwnGroup` | Mixin-Accessor und `CreateCompat.findConnectedGroup` für einen einzelnen Crafter bzw. Luft |
-| `readsConnectedGroupInCreateOrder` | 2×2-Gruppe, verbunden über Creates `ConnectedInputHandler.toggleConnection`, gleiche Gruppe von jedem Mitglied aus, obere Reihe zuerst. Loggt die Reihenfolge als Daten für T5 |
-| `profileSurvivesNbtAndNetwork` | `CrafterProfile`-Codec (Speichern) und StreamCodec (Netzwerk), 21er-Bereich mit 5×5-Rahmen |
-| `invalidRegionsAreRejected` | Validierung der Bereichs-Layouts |
+| `CreateCompatGameTests` | Mixin-Accessor, Lesen verbundener Gruppen in Creates Reihenfolge |
+| `ProfileCodecGameTests` | Speicher- und Netzwerk-Codec des Profils, Validierung der Layouts |
+| `RegionGameTests` | Scan echter Gruppen (21er, L-Form, beide Achsen), Platzierung inkl. echtem Crushing-Wheel- und Truhen-Rezept |
+| `LogisticsGameTests` | T3 (Netzwerk), Repackager (nach Itemtyp, Aufteilung, 3×3 unverändert), T4 (Entpacken in die richtigen Crafter, Teilpakete) |
+| `ProfileServiceGameTests` | Strg-Rechtsklick-Ablauf: anlegen, hinzufügen, doppelt, entfernen, löschen, Reichweite |
 
 Die Arena erzeugt `scripts/make-empty-structure.py` (Vanilla-Struktur-NBT, DataVersion 3955).
-
-GameTests liegen im Haupt-Sourceset. NeoForge lädt sie nur auf einem GameTest-Server bzw. bei aktiviertem GameTest-Modus, im normalen Spiel nicht.
+GameTests und Smoke-Test liegen im Haupt-Sourceset. Sie laufen nur im GameTest-Modus bzw. mit der Systemeigenschaft `bigcreateautocrafter.clientSmokeTest`, im normalen Spiel nicht.
 
 ## Gemessene Fakten aus den GameTests
-- Bei `facing = NORTH` liefert Create die Inventare in dieser Reihenfolge: obere Reihe zuerst, innerhalb der Reihe von **Osten nach Westen** (absolute Koordinaten). Ob das vom Spieler aus gesehen links→rechts ist, hängt davon ab, welche Seite die Vorderseite des Crafters ist. Das wird im Client geprüft (T5).
+- Bei `facing = NORTH` liefert Create die Inventare in dieser Reihenfolge: obere Reihe zuerst, innerhalb der Reihe von **Osten nach Westen**. `RegionScanner` bildet Creates Sortierung nach und prüft sie bei jedem Scan gegen Creates echte Reihenfolge.
+- Creates Stock-Keeper-Screen schließt sich sofort, wenn neben dem Stock Ticker weder ein sitzender Händler noch ein Blaze Burner (mit Blaze) steht. Der Smoke-Test stellt deshalb einen Blaze Burner auf.

@@ -12,9 +12,11 @@ import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScree
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 
@@ -24,8 +26,13 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
  */
 public final class ProfileSelector {
     private static final String KEY = BigCreateAutoCrafter.MODID + ".selector.";
-    private static final int WIDTH = 120;
+    private static final int MAX_WIDTH = 120;
+    private static final int MIN_WIDTH = 64;
     private static final int HEIGHT = 16;
+    /** Create 6.0.10 draws the Stock Keeper window from {@code guiLeft - 15}, 256 px wide (AllGuiTextures.STOCK_KEEPER_REQUEST_*). */
+    private static final int WINDOW_OFFSET_X = -15;
+    private static final int WINDOW_TEXTURE_WIDTH = 256;
+    private static final int GAP = 3;
 
     @Nullable
     private static Button button;
@@ -46,11 +53,24 @@ public final class ProfileSelector {
         if (!(event.getScreen() instanceof StockKeeperRequestScreen screen)) {
             return;
         }
-        int x = screen.getGuiLeft() + screen.getXSize() + 4;
-        if (x + WIDTH > screen.width - 2) {
-            x = Math.max(2, screen.getGuiLeft() - WIDTH - 4);
+        // Prefer the left side (JEI's ingredient list is on the right); never overlap Create's window.
+        int windowLeft = screen.getGuiLeft() + WINDOW_OFFSET_X;
+        int windowRight = windowLeft + WINDOW_TEXTURE_WIDTH;
+        int leftSpace = windowLeft - 2 * GAP;
+        int rightSpace = screen.width - windowRight - 2 * GAP;
+        int x;
+        int width;
+        if (leftSpace >= MIN_WIDTH) {
+            width = Math.min(MAX_WIDTH, leftSpace);
+            x = windowLeft - GAP - width;
+        } else if (rightSpace >= MIN_WIDTH) {
+            width = Math.min(MAX_WIDTH, rightSpace);
+            x = windowRight + GAP;
+        } else {
+            width = MIN_WIDTH;
+            x = GAP;
         }
-        button = Button.builder(Component.empty(), b -> {}).bounds(x, screen.getGuiTop() + 4, WIDTH, HEIGHT).build();
+        button = Button.builder(Component.empty(), b -> {}).bounds(x, screen.getGuiTop() + 4, width, HEIGHT).build();
     }
 
     public static void onRender(ScreenEvent.Render.Post event) {
@@ -63,12 +83,22 @@ public final class ProfileSelector {
             return;
         }
         ClientSelection.Option option = ClientSelection.current(mc.level.dimension());
-        String label = mc.font.plainSubstrByWidth(option.label().getString(), WIDTH - 8);
+        String label = mc.font.plainSubstrByWidth(option.label().getString(), current.getWidth() - 8);
         current.setMessage(Component.literal(label));
+        // Vanilla widget tooltip: registered for the screen's next tooltip pass while hovered.
+        current.setTooltip(Tooltip.create(joinLines(tooltip(option))));
         current.render(event.getGuiGraphics(), event.getMouseX(), event.getMouseY(), event.getPartialTick());
-        if (current.isHovered()) {
-            event.getGuiGraphics().renderComponentTooltip(mc.font, tooltip(option), event.getMouseX(), event.getMouseY());
+    }
+
+    private static Component joinLines(List<Component> lines) {
+        MutableComponent joined = Component.empty();
+        for (int i = 0; i < lines.size(); i++) {
+            if (i > 0) {
+                joined.append("\n");
+            }
+            joined.append(lines.get(i));
         }
+        return joined;
     }
 
     public static void onMouseClicked(ScreenEvent.MouseButtonPressed.Pre event) {

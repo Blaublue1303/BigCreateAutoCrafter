@@ -1,5 +1,7 @@
 # Phase 3 – Technischer Gesamtplan
 
+> **Stand Prototyp 1:** umgesetzt mit Variante B (Mixins für L4, L5 und den Startzeitpunkt) plus eigenem JEI-Handler für L1. Ein Bereich ist eine ganze Create-Crafter-Gruppe. Die Klassen weichen im Detail von der Tabelle unten ab (z. B. `ProfileService`, `RegionScanner`, `LargePatternPackaging`, `ProfileSelector`); maßgeblich sind der Code und `docs/07-prototyp-1.md`.
+
 ## Ziel
 Der Stock-Keeper-Craftingablauf (JEI "+" → Zutaten anfordern → Pakete → Crafter) soll auch für **größere verbundene Mechanical-Crafter-Anlagen** (z. B. 5×5, 4×6, 9×9) funktionieren – serverseitig validiert, kompatibel mit dem unveränderten 3×3-Verhalten.
 
