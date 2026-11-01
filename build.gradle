@@ -198,6 +198,14 @@ publishing {
     }
 }
 
+// MIT: the license notice travels with every copy of the jar
+tasks.named('jar', Jar).configure {
+    def licenseName = "LICENSE_${mod_id}"  // resolved now: the configuration cache cannot reach project properties later
+    from('LICENSE') {
+        rename { licenseName }
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
     options.compilerArgs << '-Xlint:deprecation'

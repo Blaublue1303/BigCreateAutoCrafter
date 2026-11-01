@@ -19,13 +19,13 @@ Alles für die Projektseite auf CurseForge. Beschreibung und Bildtexte sind auf 
    - **Summary:** `Order and auto-craft recipes bigger than 3×3 with Create's Stock Keeper and Factory Gauges`
    - **Kategorie:** z. B. Technology / Automation
    - **Logo:** `logo-round.png` (oder eine der anderen Varianten)
-   - **Lizenz:** im Mod steht bisher „All Rights Reserved“. Das musst du entscheiden.
+   - **Lizenz:** MIT (wie `LICENSE` im Repository und in der JAR ab 0.1.4)
 2. **Galerie:** Lade die Dateien aus `screenshots/` im Tab *Images* hoch (optional, große Ansicht).
 3. **Beschreibung:**
    1. `description.md` im Editor einfügen. Gibt es nur *WYSIWYG*, den Text abschnittsweise übernehmen.
    2. An jeder Bildstelle über *Insert/Edit Image → Upload* das passende Bild aus `description-images/` hochladen.
    3. Der Editor nimmt nur Bilder schmaler als 850 px. Die großen aus `screenshots/` lehnt er mit „Image width is too big“ ab.
-4. **Datei:** die JAR aus `build/libs/` hochladen.
+4. **Datei:** die neueste JAR aus `build/libs/` hochladen (ab 0.1.4 mit MIT in der JAR).
    - Spielversion 1.21.1, Loader NeoForge.
    - Abhängigkeiten: *Create* „Required Dependency“, *JEI* „Optional Dependency“.
 

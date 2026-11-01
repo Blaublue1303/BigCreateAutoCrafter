@@ -1,4 +1,4 @@
-# Bedienung, Test im Spiel und Grenzen (Version 0.1.3)
+# Bedienung, Test im Spiel und Grenzen (Version 0.1.4)
 
 | Anhänger am Stock Keeper | Auswahl „Crafter-Anlage“ | Fenster „Crafter-Profile“ |
 |---|---|---|
@@ -57,7 +57,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## So testest du im Spiel
 
-1. Lege `bigcreateautocrafter-0.1.3.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 4, unverändert seit 0.1.0).
+1. Lege `bigcreateautocrafter-0.1.4.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 4, unverändert seit 0.1.0).
 2. Halte Strg und rechtsklicke die 21er-Anlage. Im Chat erscheint die Bestätigung.
 3. **Stock Keeper:**
    1. Öffne den Stock Keeper, klicke den Anhänger links und wähle **Profile verwalten…**.
@@ -74,6 +74,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## Änderungen
 
+- **0.1.4:** Lizenz MIT (`LICENSE` im Repository und in der JAR). Keine Änderung am Spiel.
 - **0.1.3:** Für CurseForge vorbereitet.
   - Neue Profile heißen bei englischer Spielsprache „Setup 1“, bei deutscher weiter „Anlage 1“.
   - Logo, englische Beschreibung und Screenshots liegen in `curseforge/`.
