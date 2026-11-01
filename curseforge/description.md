@@ -2,7 +2,7 @@
 
 **Craft recipes bigger than 3×3 with Create's logistics.** Register your big Mechanical Crafter setups once, then order a Crushing Wheel (21 ingredients) straight from the Stock Keeper with JEI's **"+"**, or let a **Factory Gauge** keep it in stock.
 
-![A 21-crafter setup loaded with the ingredients of a Crushing Wheel, next to a 3×3 field](screenshots/01-crafter-setup.png)
+![A 21-crafter setup loaded with the ingredients of a Crushing Wheel, next to a 3×3 field](description-images/01-crafter-setup.png)
 
 *A 21-crafter setup that has just received one Crushing Wheel order (16 Andesite Alloy, 4 Planks, 1 Stone), next to a 3×3 field for small recipes.*
 
@@ -29,7 +29,7 @@
 
 Build and connect your Mechanical Crafters as usual with Create. Then hold **Ctrl** and right-click one of them. The chat confirms the new region. Ctrl + right-click on another group adds it to the same profile.
 
-![Chat confirmations after Ctrl + right-click](screenshots/02-register-region.png)
+![Chat confirmations after Ctrl + right-click](description-images/02-register-region.png)
 
 - **Ctrl + Shift + right-click** on a registered group removes it.
 - The key can be changed under *Controls → Big Create Auto Crafter*.
@@ -38,17 +38,17 @@ Build and connect your Mechanical Crafters as usual with Create. Then hold **Ctr
 
 The paper tag on the left of the Stock Keeper window shows the current choice. Hover over it for details, or scroll over it to switch.
 
-![Tag on the Stock Keeper with its tooltip](screenshots/03-stock-keeper-tag.png)
+![Tag on the Stock Keeper with its tooltip](description-images/03-stock-keeper-tag.png)
 
 Click the tag to see every option as a card. Regions hang from their profile on a thread.
 
-![Option panel on the Stock Keeper](screenshots/04-stock-keeper-panel.png)
+![Option panel on the Stock Keeper](description-images/04-stock-keeper-panel.png)
 
 ### 3. Set the package address
 
 Open **Manage profiles…** and click the address field of a region. Enter the address of the packager at your crafters, then press Enter. When you order with that region, the address is filled into the Stock Keeper for you.
 
-![Crafter Profiles menu](screenshots/05-profile-menu.png)
+![Crafter Profiles menu](description-images/05-profile-menu.png)
 
 - **Rename:** click the name.
 - **Delete a profile or remove a region:** click the **×** twice.
@@ -61,9 +61,9 @@ Click JEI's **"+"** on any recipe, for example the Crushing Wheel, then press **
 
 Set up the gauge as usual: the Crushing Wheel as the target, with input gauges for Andesite Alloy, Planks and Stone. Then click **Use Mechanical Crafting**. The window now shows the amount per craft. Enter the address of the packager at your crafters and confirm.
 
-![Factory Gauge with the amounts per craft](screenshots/06-factory-gauge.png)
+![Factory Gauge with the amounts per craft](description-images/06-factory-gauge.png)
 
-![Tooltip of an ingredient naming the crafter region](screenshots/07-factory-gauge-tooltip.png)
+![Tooltip of an ingredient naming the crafter region](description-images/07-factory-gauge-tooltip.png)
 
 ---
 

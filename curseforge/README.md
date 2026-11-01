@@ -8,8 +8,9 @@ Alles für die Projektseite auf CurseForge. Beschreibung und Bildtexte sind auf 
 | `logo.png` | Selbst gezeichnete Variante ohne Create- oder Minecraft-Texturen (21er-Raster mit Zahnrad). |
 | `logo-create-renders.png` | Abgerundetes Quadrat mit Mechanical Crafter und Crushing Wheel (echte Renders). |
 | `description.md` | Projektbeschreibung (Markdown). |
-| `screenshots/` | Echte In-Game-Screenshots (1600 × 900, unbearbeitet) aus dem automatischen Client-Test. |
-| `make_logo.py`, `make_logo_original.py` | Skripte, die die Logos erzeugen. |
+| `screenshots/` | Echte In-Game-Screenshots (1600 × 900, unbearbeitet) aus dem automatischen Client-Test, für die Galerie (Tab *Images*). |
+| `description-images/` | Dieselben Bilder für die Beschreibung: schmaler als 850 px (CurseForge-Grenze im Beschreibungs-Editor), Menüs auf den Ausschnitt zugeschnitten, damit die Schrift scharf bleibt. |
+| `make_logo.py`, `make_logo_original.py`, `make_description_images.py` | Skripte, die die Logos und die Beschreibungsbilder erzeugen. |
 
 ## Hochladen
 
@@ -19,11 +20,11 @@ Alles für die Projektseite auf CurseForge. Beschreibung und Bildtexte sind auf 
    - **Kategorie:** z. B. Technology / Automation
    - **Logo:** `logo-round.png` (oder eine der anderen Varianten)
    - **Lizenz:** im Mod steht bisher „All Rights Reserved“. Das musst du entscheiden.
-2. **Bilder:** Lade die Dateien aus `screenshots/` im Tab *Images* hoch.
+2. **Galerie:** Lade die Dateien aus `screenshots/` im Tab *Images* hoch (optional, große Ansicht).
 3. **Beschreibung:**
-   1. Im Editor das Format *Markdown* wählen.
-   2. `description.md` einfügen.
-   3. Jede `screenshots/…png` durch die Adresse des hochgeladenen Bildes ersetzen. Die Adresse bekommst du per Rechtsklick auf das Bild im Tab *Images* → Bildadresse kopieren.
+   1. `description.md` im Editor einfügen. Gibt es nur *WYSIWYG*, den Text abschnittsweise übernehmen.
+   2. An jeder Bildstelle über *Insert/Edit Image → Upload* das passende Bild aus `description-images/` hochladen.
+   3. Der Editor nimmt nur Bilder schmaler als 850 px. Die großen aus `screenshots/` lehnt er mit „Image width is too big“ ab.
 4. **Datei:** die JAR aus `build/libs/` hochladen.
    - Spielversion 1.21.1, Loader NeoForge.
    - Abhängigkeiten: *Create* „Required Dependency“, *JEI* „Optional Dependency“.
@@ -57,6 +58,7 @@ xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientSmokeTest
 python3 -I curseforge/make_logo.py run-smoketest/screenshots/bcac-item-renders.png curseforge/logo-round.png --round
 python3 -I curseforge/make_logo.py run-smoketest/screenshots/bcac-item-renders.png curseforge/logo-create-renders.png
 python3 -I curseforge/make_logo_original.py curseforge/logo.png
+python3 -I curseforge/make_description_images.py
 ```
 
 Die Screenshots liegen danach in `run-smoketest/screenshots/` (`bcac-world.png`, `bcac-world-chat.png`, `bcac-smoke-*.png`).
