@@ -6,7 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
@@ -19,13 +22,20 @@ import com.blaublue1303.bigcreateautocrafter.client.ProfileSelector;
 import com.blaublue1303.bigcreateautocrafter.compat.jei.JeiSmokeCheck;
 import com.blaublue1303.bigcreateautocrafter.profile.ProfileService;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.crafter.ConnectedInputHandler;
+import com.simibubi.create.content.logistics.AddressEditBox;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBlock.PanelSlot;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBlockEntity;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelConnection;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelScreen;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestMenu;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
 import com.simibubi.create.content.logistics.stockTicker.StockTickerInteractionHandler;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
+import com.simibubi.create.foundation.gui.widget.IconButton;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -37,14 +47,19 @@ import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.neoforged.fml.ModList;
@@ -53,20 +68,26 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 
 /**
  * Automated client check (dev only, run config {@code clientSmokeTest}, enabled by the system property
- * {@value #PROPERTY}): creates a flat world, builds a 21-crafter group, creates a profile through the same server code as
- * Ctrl + right-click, opens a real Stock Keeper screen, checks the JEI handlers and takes a screenshot. Results go to
- * the log and to {@code bcac-smoketest.txt} in the game directory.
+ * {@value #PROPERTY}): creates a flat world, builds a 21-crafter group and a 3×3 field, creates a profile through the
+ * same server code as Ctrl + right-click, opens a real Stock Keeper screen, checks the JEI handlers, the selector and the
+ * profile menu, then configures a real Factory Gauge for the crushing wheel through its screen and checks what the
+ * server saved. Screenshots go to {@code screenshots/}, results to the log and to {@code bcac-smoketest.txt} in the game
+ * directory.
  */
 public final class ClientSmokeTest {
     public static final String PROPERTY = "bigcreateautocrafter.clientSmokeTest";
     private static final int TIMEOUT_TICKS = 20 * 60;
 
-    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, TAG_TOOLTIP, DROPDOWN, MANAGER, RENAMED, DONE }
+    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, TAG_TOOLTIP, DROPDOWN, MANAGER, RENAMED,
+        GAUGE_SETUP, GAUGE_OPEN, GAUGE_SAVE, GAUGE_CHECK, DONE }
 
     private static Phase phase = Phase.WAIT_TITLE;
     private static int ticks;
     private static final List<String> RESULTS = new ArrayList<>();
     private static volatile BlockPos tickerPos;
+    private static volatile BlockPos gaugePos;
+    private static CompletableFuture<String> gaugeCheck;
+    private static int[] gaugeFirstInput = {0, 0};
     private static String lastScreen = "";
 
     private ClientSmokeTest() {
@@ -176,6 +197,42 @@ public final class ClientSmokeTest {
                     }
                     if (ticks > 20) {
                         RESULTS.add((mc.screen instanceof StockKeeperRequestScreen ? "PASS" : "FAIL") + " closing the menu returns to the Stock Keeper");
+                        mc.player.closeContainer();
+                        setUpGauge(mc.getSingleplayerServer(), mc.player.getUUID());
+                        next(Phase.GAUGE_SETUP);
+                    }
+                }
+                case GAUGE_SETUP -> {
+                    // the client needs the gauge's connections before its screen can find a recipe
+                    if (ticks > 20 && mc.level.getBlockEntity(gaugePos) instanceof FactoryPanelBlockEntity gauge
+                            && gauge.panels.get(PanelSlot.TOP_LEFT).targetedBy.size() == 3) {
+                        mc.setScreen(new FactoryPanelScreen(gauge.panels.get(PanelSlot.TOP_LEFT)));
+                        next(Phase.GAUGE_OPEN);
+                    }
+                }
+                case GAUGE_OPEN -> {
+                    if (ticks == 5 && mc.screen instanceof FactoryPanelScreen gaugeScreen) {
+                        next(Phase.GAUGE_SAVE);
+                        useMechanicalCrafting(gaugeScreen);
+                    }
+                }
+                case GAUGE_SAVE -> {
+                    if (ticks == 10) {
+                        screenshot(mc, "bcac-smoke-gauge.png");
+                        moveMouse(mc, gaugeFirstInput[0], gaugeFirstInput[1]);
+                    }
+                    if (ticks == 20) {
+                        screenshot(mc, "bcac-smoke-gauge-tooltip.png");
+                        mc.screen.onClose(); // saves like Create's confirm button
+                    }
+                    if (ticks == 40) {
+                        gaugeCheck = mc.getSingleplayerServer().submit(ClientSmokeTest::checkGaugeOnServer);
+                        next(Phase.GAUGE_CHECK);
+                    }
+                }
+                case GAUGE_CHECK -> {
+                    if (gaugeCheck.isDone()) {
+                        RESULTS.add(gaugeCheck.join());
                         next(Phase.DONE);
                     }
                 }
@@ -266,6 +323,74 @@ public final class ClientSmokeTest {
             level.setBlock(tickerPos.east(), AllBlocks.BLAZE_BURNER.getDefaultState()
                     .setValue(BlazeBurnerBlock.HEAT_LEVEL, BlazeBurnerBlock.HeatLevel.SMOULDERING), 3);
         });
+    }
+
+    /** A Factory Gauge block with four panels: crushing wheel (top left) fed by andesite alloy, planks and stone. */
+    private static void setUpGauge(IntegratedServer server, UUID playerId) {
+        server.execute(() -> {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            ServerLevel level = player.serverLevel();
+            gaugePos = player.blockPosition().south(2);
+            level.setBlock(gaugePos, AllBlocks.FACTORY_GAUGE.getDefaultState().setValue(BlockStateProperties.ATTACH_FACE, AttachFace.FLOOR), 3);
+            if (!(level.getBlockEntity(gaugePos) instanceof FactoryPanelBlockEntity gauge)) {
+                return;
+            }
+            UUID network = UUID.randomUUID();
+            List<ItemStack> filters = List.of(AllBlocks.CRUSHING_WHEEL.asStack(), AllItems.ANDESITE_ALLOY.asStack(),
+                    new ItemStack(Items.OAK_PLANKS), new ItemStack(Items.STONE));
+            for (PanelSlot slot : PanelSlot.values()) {
+                gauge.addPanel(slot, network);
+                gauge.panels.get(slot).setFilter(filters.get(slot.ordinal()));
+            }
+            FactoryPanelBehaviour wheel = gauge.panels.get(PanelSlot.TOP_LEFT);
+            for (PanelSlot slot : List.of(PanelSlot.TOP_RIGHT, PanelSlot.BOTTOM_LEFT, PanelSlot.BOTTOM_RIGHT)) {
+                wheel.addConnection(gauge.panels.get(slot).getPanelPosition());
+            }
+            gauge.notifyUpdate();
+        });
+    }
+
+    /**
+     * Clicks "Use Mechanical Crafting" and sends to an address that is no region's address (the case from the first
+     * Factory Gauge test in the game); remembers where the first ingredient is drawn.
+     */
+    private static void useMechanicalCrafting(FactoryPanelScreen screen) {
+        IconButton activate = screen.children().stream()
+                .filter(IconButton.class::isInstance).map(IconButton.class::cast)
+                .filter(button -> !button.getToolTip().isEmpty()
+                        && button.getToolTip().get(0).getContents() instanceof TranslatableContents key
+                        && key.getKey().equals("create.gui.factory_panel.activate_crafting"))
+                .findFirst().orElse(null);
+        if (activate == null) {
+            RESULTS.add("FAIL gauge offers no mechanical crafting for the crushing wheel");
+            return;
+        }
+        RESULTS.add("PASS gauge offers mechanical crafting for the crushing wheel");
+        int guiLeft = activate.getX() - 31;
+        int guiTop = activate.getY() - 27;
+        screen.mouseClicked(activate.getX() + 4, activate.getY() + 4, 0);
+        screen.children().stream().filter(AddressEditBox.class::isInstance).map(AddressEditBox.class::cast)
+                .findFirst().ifPresent(box -> box.setValue("wheel_factory"));
+        gaugeFirstInput = new int[] {guiLeft + 68 + 8, guiTop + 28 + 8};
+    }
+
+    /** What the gauge saved on the server: the 21-crafter arrangement and 16 / 4 / 1 per craft. */
+    private static String checkGaugeOnServer() {
+        ServerLevel level = Minecraft.getInstance().getSingleplayerServer().overworld();
+        if (!(level.getBlockEntity(gaugePos) instanceof FactoryPanelBlockEntity gauge)) {
+            return "FAIL gauge block entity missing";
+        }
+        FactoryPanelBehaviour wheel = gauge.panels.get(PanelSlot.TOP_LEFT);
+        long filled = wheel.activeCraftingArrangement.stream().filter(stack -> !stack.isEmpty()).count();
+        Map<String, Integer> amounts = new TreeMap<>();
+        for (FactoryPanelConnection connection : wheel.targetedBy.values()) {
+            FactoryPanelBehaviour source = FactoryPanelBehaviour.at(level, connection);
+            amounts.put(source == null ? "?" : source.getFilter().getItem().toString(), connection.amount);
+        }
+        boolean ok = filled == 21 && wheel.activeCraftingArrangement.size() == 21 && wheel.recipeAddress.equals("wheel_factory")
+                && amounts.equals(Map.of("create:andesite_alloy", 16, "minecraft:oak_planks", 4, "minecraft:stone", 1));
+        return (ok ? "PASS" : "FAIL") + " gauge saved " + filled + "/" + wheel.activeCraftingArrangement.size()
+                + " crafter slots, amounts " + amounts + ", address " + wheel.recipeAddress;
     }
 
     private static void openStockKeeper(IntegratedServer server, UUID playerId) {

@@ -48,7 +48,7 @@
   "bigcreateautocrafter.manager.remove": "Remove Region",
   "bigcreateautocrafter.manager.confirm": "Click again to confirm",
   "key.bigcreateautocrafter.open_manager": "Open crafter profiles",
-  "message.bigcreateautocrafter.factory_needs_region": "This recipe needs a crafter region: set the gauge's address to the package address of a fitting region.",
+  "message.bigcreateautocrafter.factory_needs_region": "None of your crafter regions fits this recipe.",
   "bigcreateautocrafter.selector.panel_title": "Crafter Setup",
   "bigcreateautocrafter.selector.scroll": "Scroll to switch",
   "bigcreateautocrafter.manager.address_info": "Set in the Stock Keeper when chosen;",
@@ -58,5 +58,10 @@
   "bigcreateautocrafter.manager.region": "Region %s",
   "bigcreateautocrafter.manager.region_crafters": "%s Mechanical Crafters",
   "bigcreateautocrafter.manager.footer_hint": "Ctrl + right-click a crafter group to add it here",
-  "bigcreateautocrafter.manager.done": "Done"
+  "bigcreateautocrafter.manager.done": "Done",
+  "message.bigcreateautocrafter.factory_saved": "Gauge crafts on region %s (%s ingredients per craft)",
+  "bigcreateautocrafter.factory.region": "Crafter region: %s",
+  "bigcreateautocrafter.factory.ingredients": "%s ingredients per craft",
+  "bigcreateautocrafter.factory.per_craft": "%s× %s per craft",
+  "bigcreateautocrafter.factory.address_tip": "Packages go to the gauge's address"
 }

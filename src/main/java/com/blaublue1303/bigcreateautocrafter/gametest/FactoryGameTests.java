@@ -77,6 +77,29 @@ public class FactoryGameTests {
         helper.succeed();
     }
 
+    /** The user's case: "Use Mechanical Crafting" for the wheel with a gauge address that is no region's address. */
+    @GameTest(template = TestCrafters.ARENA)
+    public static void choosesRegionForGauge(GameTestHelper helper) {
+        List<CrafterProfile> profiles = List.of(ProfileCodecGameTests.sampleProfile()); // regions: 21 "crafter_gross", 3×3 ""
+        CraftingRecipe wheel = recipe(helper, ResourceLocation.fromNamespaceAndPath("create", "mechanical_crafting/crushing_wheel"));
+        for (String address : List.of("", "somewhere_else", "crafter_gross")) {
+            FactoryArrangements.Target target = FactoryArrangements.target(profiles, Level.OVERWORLD, address, wheel, WHEEL_INPUTS).orElse(null);
+            helper.assertTrue(target != null && target.region().name().equals("Groß"), "Wheel must go to the 21 region (address '" + address + "')");
+            helper.assertTrue(target.countOf(new ItemStack(AllItems.ANDESITE_ALLOY.get())) == 16 && target.countOf(new ItemStack(Items.OAK_PLANKS)) == 4
+                    && target.countOf(new ItemStack(Items.STONE)) == 1, "Wrong amounts per craft for the wheel");
+        }
+        helper.assertTrue(FactoryArrangements.target(profiles, Level.NETHER, "", wheel, WHEEL_INPUTS).isEmpty(),
+                "Regions of another dimension must not be used");
+
+        CraftingRecipe chest = recipe(helper, ResourceLocation.withDefaultNamespace("chest"));
+        List<BigItemStack> planks = List.of(new BigItemStack(new ItemStack(Items.OAK_PLANKS), 8));
+        helper.assertTrue(FactoryArrangements.target(profiles, Level.OVERWORLD, "somewhere_else", chest, planks).isEmpty(),
+                "A 3×3 recipe to another address stays with Create");
+        helper.assertTrue(FactoryArrangements.target(profiles, Level.OVERWORLD, "crafter_gross", chest, planks)
+                .map(t -> t.region().name()).orElse("").equals("Groß"), "A 3×3 recipe to a region's address uses that region");
+        helper.succeed();
+    }
+
     private static long count(List<ItemStack> arrangement, Item item) {
         return arrangement.stream().filter(stack -> stack.is(item)).count();
     }

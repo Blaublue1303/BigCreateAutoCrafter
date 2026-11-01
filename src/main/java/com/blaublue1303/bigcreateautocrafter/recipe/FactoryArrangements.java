@@ -1,5 +1,6 @@
 package com.blaublue1303.bigcreateautocrafter.recipe;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -24,12 +25,43 @@ import net.minecraft.world.level.Level;
  * Crafting with Create's Factory Gauge on a crafter region.
  *
  * <p>A Factory Gauge stores a crafting arrangement (one item per crafter slot) and sends it as pattern with every order to
- * its recipe address. Create builds that arrangement as 3×3 and only finds regular crafting recipes. For a gauge whose
- * recipe address is the address of a crafter region, the arrangement is built for that region instead, and mechanical
- * crafting recipes are found as well.
+ * its recipe address. Create builds that arrangement as 3×3 and only finds regular crafting recipes. Mechanical crafting
+ * recipes that fit one of the player's regions are offered as well, and the arrangement is built for a region (see
+ * {@link #target}).
  */
 public final class FactoryArrangements {
     private FactoryArrangements() {
+    }
+
+    /** The region a gauge crafts on and the arrangement (one stack per crafter) for it. */
+    public record Target(CrafterRegion region, List<ItemStack> arrangement) {
+        /** How many crafters get {@code stack}'s item, i.e. how many of it one craft needs. */
+        public int countOf(ItemStack stack) {
+            return (int) arrangement.stream().filter(slot -> !slot.isEmpty() && ItemStack.isSameItemSameComponents(slot, stack)).count();
+        }
+    }
+
+    /**
+     * The region a gauge crafts {@code recipe} on: the region whose package address is the gauge's address, if the
+     * recipe fits it; otherwise, for a recipe larger than 3×3, the smallest of the player's regions it fits (the gauge's
+     * address only decides where the packages go). Empty means Create's own 3×3 behaviour.
+     */
+    public static Optional<Target> target(List<CrafterProfile> profiles, ResourceKey<Level> dimension, String address,
+                                          CraftingRecipe recipe, List<BigItemStack> inputs) {
+        Optional<Target> byAddress = regionForAddress(profiles, dimension, address).flatMap(region -> target(region, recipe, inputs));
+        if (byAddress.isPresent() || fitsThreeByThree(recipe)) {
+            return byAddress;
+        }
+        return profiles.stream()
+                .filter(p -> p.dimension().equals(dimension))
+                .flatMap(p -> p.regions().stream())
+                .sorted(Comparator.comparingInt(CrafterRegion::crafterCount))
+                .flatMap(region -> target(region, recipe, inputs).stream())
+                .findFirst();
+    }
+
+    private static Optional<Target> target(CrafterRegion region, CraftingRecipe recipe, List<BigItemStack> inputs) {
+        return forRegion(recipe, inputs, region).map(arrangement -> new Target(region, arrangement));
     }
 
     /** The region (of the given profiles, in this dimension) whose package address is {@code address}. */

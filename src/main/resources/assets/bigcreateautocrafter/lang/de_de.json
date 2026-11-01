@@ -48,7 +48,7 @@
   "bigcreateautocrafter.manager.remove": "Bereich entfernen",
   "bigcreateautocrafter.manager.confirm": "Zum Bestätigen nochmal klicken",
   "key.bigcreateautocrafter.open_manager": "Crafter-Profile öffnen",
-  "message.bigcreateautocrafter.factory_needs_region": "Dieses Rezept braucht einen Crafter-Bereich: Setze die Adresse der Gauge auf die Paketadresse eines passenden Bereichs.",
+  "message.bigcreateautocrafter.factory_needs_region": "Dieses Rezept passt in keinen deiner Crafter-Bereiche.",
   "bigcreateautocrafter.selector.panel_title": "Crafter-Anlage",
   "bigcreateautocrafter.selector.scroll": "Scrollen zum Wechseln",
   "bigcreateautocrafter.manager.address_info": "Kommt bei Auswahl in den Stock Keeper;",
@@ -58,5 +58,10 @@
   "bigcreateautocrafter.manager.region": "Bereich %s",
   "bigcreateautocrafter.manager.region_crafters": "%s Mechanical Crafter",
   "bigcreateautocrafter.manager.footer_hint": "Strg + Rechtsklick auf eine Crafter-Gruppe fügt sie hier hinzu",
-  "bigcreateautocrafter.manager.done": "Fertig"
+  "bigcreateautocrafter.manager.done": "Fertig",
+  "message.bigcreateautocrafter.factory_saved": "Gauge craftet auf Bereich %s (%s Zutaten pro Craft)",
+  "bigcreateautocrafter.factory.region": "Crafter-Bereich: %s",
+  "bigcreateautocrafter.factory.ingredients": "%s Zutaten pro Craft",
+  "bigcreateautocrafter.factory.per_craft": "%s× %s pro Craft",
+  "bigcreateautocrafter.factory.address_tip": "Pakete gehen an die Adresse der Gauge"
 }
