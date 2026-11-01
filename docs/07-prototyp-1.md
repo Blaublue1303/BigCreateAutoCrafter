@@ -18,6 +18,21 @@
 4. **JEI „+“:** Mit gewähltem Profil funktioniert das „+“ auch für Rezepte mit mehr als 9 Zutaten (z. B. Crushing Wheel, 21 Zutaten). Kleine Rezepte gehen in kleine Bereiche oder in die erste passende Stelle eines großen Bereichs.
 5. **Pakete:** Beim Senden erzeugt die Mod ein Muster pro Crafter des Bereichs. Der Repackager packt große Muster nach Itemtyp, also bis zu 64 gleiche Items pro Paket-Slot, damit ein Craft in **ein** Paket passt. Creates Crafter-Entpacker verteilt die Items dann auf die richtigen Crafter.
 
+## Änderungen
+
+- **0.0.2:** Fehler aus dem ersten Spieltest behoben. Beim Senden wurde die Bestellliste beim Bauen des Musters heruntergezählt. Create fand danach „0 Crafts“ und schickte den Auftrag **ohne** Crafting-Informationen. Die Crafter wurden dann einfach der Reihe nach gefüllt: erst alles Andesit, dann Holz, dann Stein, und die Tür kam kaputt an. Neuer GameTest `orderKeepsCraftingEntry` spielt Creates Zählschleife nach und hätte den Fehler gefunden.
+- **0.0.1:** erster Prototyp.
+
+## Wann ein Repackager nötig ist (wie bei Create selbst)
+
+Create legt die Crafting-Informationen nur an die Pakete **eines** Packagers, und sein Crafter-Entpacker nimmt nur Pakete an, deren Items genau in die freien Felder passen. Das gilt für 3×3 genauso wie für große Bereiche:
+
+| Situation | ohne Repackager | mit Repackager |
+|---|---|---|
+| 1 Craft, alle Zutaten aus **einem** Packager | ✅ | ✅ |
+| 1 Craft, Zutaten aus **mehreren** Packagern (z. B. ein Vault pro Item) | ❌ Pakete ohne Info werden der Reihe nach eingefüllt | ✅ |
+| **mehrere** Crafts in einem Auftrag | ❌ das Paket enthält Items für mehrere Crafts und wird abgelehnt | ✅ ein Paket pro Craft |
+
 ## Wie bisher nötig (Create-Aufbau)
 
 Ein großer Bereich braucht dasselbe wie dein bisheriger 3×3-Ablauf:
@@ -31,12 +46,12 @@ Die Mod ändert keine Blöcke, nur Muster und Paketierung.
 
 ## So testest du im Spiel
 
-1. Baue mit `./gradlew build` die Datei `build/libs/bigcreateautocrafter-0.0.1.jar` und lege sie auf Client **und** Server in den `mods`-Ordner.
+1. Baue mit `./gradlew build` die Datei `build/libs/bigcreateautocrafter-0.0.2.jar` und lege sie auf Client **und** Server in den `mods`-Ordner (alte JAR entfernen).
 2. Baue die 21er-Anlage (5×5 ohne Ecken, wie für das Crushing Wheel), verbinde sie mit dem Schraubenschlüssel und schließe sie wie deine 3×3-Anlage an.
 3. Halte Strg und rechtsklicke einen Crafter. Im Chat erscheint „Profil „Anlage 1“ mit Bereich 5×5 (21) angelegt“.
 4. Setze die Adresse mit `/bcac address 1 1 <deine Adresse>`.
 5. Öffne den Stock Keeper und stelle den Button links auf „Anlage 1 · Auto“.
-6. Suche das Crushing Wheel, öffne das Rezept mit JEI und klicke auf „+“. Sende dann den Auftrag.
+6. Suche das Crushing Wheel, öffne das Rezept mit JEI und klicke auf „+“ (ohne Shift, also **1** Craft). Sende dann den Auftrag.
 7. **Erwartet:** Ein Paket pro Craft kommt an der Anlage an, alle 21 Crafter werden gefüllt und das Crushing Wheel wird gecraftet.
 8. Gegenprobe: Mit „Standard“ läuft alles wie vorher, und das „+“ beim Crushing Wheel ist gesperrt.
 

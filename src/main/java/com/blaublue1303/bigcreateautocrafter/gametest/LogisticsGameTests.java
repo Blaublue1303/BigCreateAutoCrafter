@@ -1,6 +1,7 @@
 package com.blaublue1303.bigcreateautocrafter.gametest;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
@@ -166,7 +167,9 @@ public class LogisticsGameTests {
         }
         List<Ingredient> template = RegionPlacer.templateFor(new GridRecipe(3, 3, cells, false), region).orElseThrow();
         List<BigItemStack> pattern = PatternBuilder.build(template, inputs, true);
-        helper.assertTrue(pattern.size() == 21 && inputs.stream().allMatch(i -> i.count == 0), "Pattern did not use each input once");
+        helper.assertTrue(pattern.size() == 21 && pattern.stream().filter(b -> !b.stack.isEmpty()).count() == 9,
+                "Pattern must contain the nine items: " + pattern.size());
+        helper.assertTrue(inputs.stream().allMatch(i -> i.count == 1), "PatternBuilder must not change the ordered amounts");
 
         List<ItemStackHandler> parts = LargePatternPackaging.splitByItem(pattern);
         helper.assertTrue(parts.size() == 1, "Nine items must fit into one package");
@@ -211,6 +214,69 @@ public class LogisticsGameTests {
             helper.assertTrue(complete == (p == parts.size() - 1), "Grid complete after package " + (p + 1) + ": " + complete);
         }
         helper.succeed();
+    }
+
+    /**
+     * Regression test for the first in-game test: Create's {@code StockKeeperRequestScreen.sendIt} counts crafts on the
+     * ordered list right after building the pattern. If the pattern builder reduced that list, Create found 0 crafts and
+     * sent the order without crafting information; the crafters were then filled one after another (all andesite alloy
+     * first, then planks, ...). This replays Create 6.0.10's counting loop with our pattern builder.
+     */
+    @GameTest(template = ARENA)
+    public static void orderKeepsCraftingEntry(GameTestHelper helper) {
+        CrafterRegion region = new CrafterRegion("21", BlockPos.ZERO, Direction.NORTH, ProfileCodecGameTests.LAYOUT_21, "");
+        // door-like recipe: 2 wide, 3 high, one item type
+        List<Ingredient> door = Collections.nCopies(6, Ingredient.of(Items.OAK_PLANKS));
+        List<Ingredient> template = RegionPlacer.templateFor(new GridRecipe(2, 3, door, false), region).orElseThrow();
+        for (int crafts : new int[] {1, 3}) {
+            List<BigItemStack> itemsToOrder = List.of(new BigItemStack(new ItemStack(Items.OAK_PLANKS), 6 * crafts));
+            List<PackageOrderWithCrafts.CraftingEntry> entries = createSendItCraftList(template, itemsToOrder, crafts);
+            int total = entries.stream().mapToInt(PackageOrderWithCrafts.CraftingEntry::count).sum();
+            helper.assertTrue(total == crafts, crafts + " craft(s) ordered, but the crafting list has " + total);
+            helper.assertTrue(entries.get(0).pattern().stacks().size() == 21, "Pattern must have one slot per crafter");
+        }
+        helper.succeed();
+    }
+
+    /** Create 6.0.10 {@code StockKeeperRequestScreen.sendIt}, crafting part, with our pattern builder in place of Create's 3×3 one. */
+    private static List<PackageOrderWithCrafts.CraftingEntry> createSendItCraftList(List<Ingredient> template, List<BigItemStack> itemsToOrder,
+                                                                                  int targetCount) {
+        List<PackageOrderWithCrafts.CraftingEntry> craftList = new ArrayList<>();
+        int craftedCount = 0;
+        List<BigItemStack> mutableOrder = BigItemStack.duplicateWrappers(itemsToOrder);
+        while (craftedCount < targetCount) {
+            PackageOrder pattern = new PackageOrder(PatternBuilder.build(template, mutableOrder, true));
+            int maxCrafts = targetCount - craftedCount;
+            int availableCrafts = 0;
+            boolean itemsExhausted = false;
+            outer:
+            while (availableCrafts < maxCrafts && !itemsExhausted) {
+                List<BigItemStack> previousSnapshot = BigItemStack.duplicateWrappers(mutableOrder);
+                itemsExhausted = true;
+                patternLoop:
+                for (BigItemStack patternStack : pattern.stacks()) {
+                    if (patternStack.stack.isEmpty()) {
+                        continue;
+                    }
+                    for (BigItemStack ordered : mutableOrder) {
+                        if (ItemStack.isSameItemSameComponents(ordered.stack, patternStack.stack) && ordered.count != 0) {
+                            ordered.count--;
+                            itemsExhausted = false;
+                            continue patternLoop;
+                        }
+                    }
+                    mutableOrder = previousSnapshot;
+                    break outer;
+                }
+                availableCrafts++;
+            }
+            if (availableCrafts == 0) {
+                break;
+            }
+            craftList.add(new PackageOrderWithCrafts.CraftingEntry(pattern, availableCrafts));
+            craftedCount += availableCrafts;
+        }
+        return craftList;
     }
 
     private static MechanicalCrafterBlockEntity crafterAt(GameTestHelper helper, BlockPos pos) {

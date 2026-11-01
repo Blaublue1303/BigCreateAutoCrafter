@@ -8,7 +8,7 @@ NeoForge-Mod (MC 1.21.1, NeoForge 21.1.250) für das Modpack **Create Exta+ 2.0*
 - Plan, Risiken, Umgebung, TODO: `docs/03…06`
 - Prototyp 1 (Bedienung, Test im Spiel, Grenzen): `docs/07-prototyp-1.md`
 - Build: `./gradlew build` (JDK 21)
-- Tests: `./gradlew runGameTestServer` (15 GameTests, headless) und `xvfb-run ./gradlew runClientSmokeTest` (Client)
+- Tests: `./gradlew runGameTestServer` (16 GameTests, headless) und `xvfb-run ./gradlew runClientSmokeTest` (Client)
 - Details zur Umgebung: `docs/05-dev-environment.md`
 
 Die Mojang-Mappings (Parchment) unterliegen eigenen Lizenzen: https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
