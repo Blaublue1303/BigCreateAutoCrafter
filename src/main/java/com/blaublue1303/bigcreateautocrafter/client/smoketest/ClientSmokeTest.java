@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWCursorPosCallback;
+
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.blaublue1303.bigcreateautocrafter.client.ClientProfileCache;
 import com.blaublue1303.bigcreateautocrafter.client.ClientSelection;
@@ -23,6 +26,8 @@ import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestMenu;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
 import com.simibubi.create.content.logistics.stockTicker.StockTickerInteractionHandler;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
+
+import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -56,7 +61,7 @@ public final class ClientSmokeTest {
     public static final String PROPERTY = "bigcreateautocrafter.clientSmokeTest";
     private static final int TIMEOUT_TICKS = 20 * 60;
 
-    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, DROPDOWN, MANAGER, RENAMED, DONE }
+    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, TAG_TOOLTIP, DROPDOWN, MANAGER, RENAMED, DONE }
 
     private static Phase phase = Phase.WAIT_TITLE;
     private static int ticks;
@@ -131,8 +136,15 @@ public final class ClientSmokeTest {
                             RESULTS.addAll(JeiSmokeCheck.check(menu));
                         }
                         screenshot(mc, "bcac-smoke-stockkeeper.png");
+                        next(Phase.TAG_TOOLTIP);
+                        ProfileSelector.tagArea().ifPresent(tag -> moveMouse(mc, tag.getX() + tag.getWidth() / 2, tag.getY() + tag.getHeight() / 2));
+                    }
+                }
+                case TAG_TOOLTIP -> {
+                    if (ticks == 10) {
+                        screenshot(mc, "bcac-smoke-tag.png");
                         if (mc.screen instanceof StockKeeperRequestScreen stockKeeper) {
-                            ProfileSelector.openDropdown(stockKeeper);
+                            ProfileSelector.openPanel(stockKeeper);
                         }
                         next(Phase.DROPDOWN);
                     }
@@ -143,15 +155,17 @@ public final class ClientSmokeTest {
                         ProfileSelector.openManager(mc.screen);
                     }
                     if (ticks > 20 && mc.screen instanceof ProfileManagerScreen manager) {
-                        RESULTS.add((manager.rowCount() == 2 ? "PASS" : "FAIL") + " profile menu shows " + manager.rowCount() + " rows (profile + region)");
-                        manager.renameFirstProfileForTest("Testanlage");
+                        RESULTS.add((manager.rowCount() == 3 ? "PASS" : "FAIL") + " profile menu shows " + manager.rowCount() + " cards (profile + 2 regions)");
+                        manager.editCardForTest(0, "Testanlage");
+                        manager.editCardForTest(1, "crafter_gross");
                         next(Phase.MANAGER);
                     }
                 }
                 case MANAGER -> {
                     // the rename goes to the server and comes back with the next profile sync
-                    if (!ClientProfileCache.all().isEmpty() && ClientProfileCache.all().get(0).name().equals("Testanlage")) {
-                        RESULTS.add("PASS rename from the profile menu reached the server and came back");
+                    if (!ClientProfileCache.all().isEmpty() && ClientProfileCache.all().get(0).name().equals("Testanlage")
+                            && ClientProfileCache.all().get(0).regions().get(0).address().equals("crafter_gross")) {
+                        RESULTS.add("PASS rename and address from the profile menu reached the server and came back");
                         next(Phase.RENAMED);
                     }
                 }
@@ -205,7 +219,7 @@ public final class ClientSmokeTest {
                 mc.screen);
     }
 
-    /** 5×5 crafters without corners 3 blocks north of the player facing south; Stock Ticker + Blaze Burner to the east. */
+    /** 5×5 crafters without corners and a 3×3 field 3 blocks north of the player facing south; Stock Ticker + Blaze Burner to the east. */
     private static void setUpOnServer(IntegratedServer server, UUID playerId) {
         server.execute(() -> {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
@@ -231,6 +245,21 @@ public final class ClientSmokeTest {
                 }
             }
             ProfileService.handleCrafterClick(player, first, false);
+            // a 3×3 field to the west (one block gap, within reach) goes into the same profile as a second region
+            BlockPos small = origin.offset(-4, 0, -3);
+            List<BlockPos> field = new ArrayList<>();
+            for (int dy = 0; dy < 3; dy++) {
+                for (int dx = -2; dx <= 0; dx++) {
+                    field.add(small.offset(dx, dy, 0));
+                }
+            }
+            for (BlockPos pos : field) {
+                level.setBlock(pos, crafter, 3);
+                if (!pos.equals(small)) {
+                    ConnectedInputHandler.toggleConnection(level, small, pos);
+                }
+            }
+            ProfileService.handleCrafterClick(player, small, false);
             tickerPos = origin.east(2);
             level.setBlock(tickerPos, AllBlocks.STOCK_TICKER.getDefaultState(), 3);
             // Create closes the Stock Keeper screen without a seated keeper or a Blaze Burner next to the ticker
@@ -255,6 +284,23 @@ public final class ClientSmokeTest {
     private static void next(Phase newPhase) {
         phase = newPhase;
         ticks = 0;
+        // keep the mouse in the corner so no tooltip covers the screenshots
+        moveMouse(Minecraft.getInstance(), 0, 0);
+    }
+
+    /**
+     * Moves Minecraft's mouse to GUI coordinates by calling its cursor callback. The real cursor is not warped: GLFW
+     * would report an older warp later and undo the move.
+     */
+    private static void moveMouse(Minecraft mc, int guiX, int guiY) {
+        long window = mc.getWindow().getWindow();
+        double x = guiX * mc.getWindow().getGuiScale();
+        double y = guiY * mc.getWindow().getGuiScale();
+        GLFWCursorPosCallback callback = GLFW.glfwSetCursorPosCallback(window, null);
+        GLFW.glfwSetCursorPosCallback(window, callback);
+        if (callback != null) {
+            callback.invoke(window, x, y);
+        }
     }
 
     private static void finish(Minecraft mc) {

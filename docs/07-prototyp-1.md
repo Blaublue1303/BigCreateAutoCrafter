@@ -1,10 +1,12 @@
-# Bedienung, Test im Spiel und Grenzen (Version 0.1.0)
+# Bedienung, Test im Spiel und Grenzen (Version 0.1.1)
 
-| Stock Keeper mit Auswahl | Profilverwaltung |
-|---|---|
-| ![Auswahlliste am Stock Keeper](img/stock-keeper-dropdown.png) | ![Fenster „Crafter-Profile“](img/profile-manager.png) |
+| Anhänger am Stock Keeper | Auswahl „Crafter-Anlage“ | Fenster „Crafter-Profile“ |
+|---|---|---|
+| ![Anhänger mit Tooltip](img/stock-keeper-selector.png) | ![Auswahl am Stock Keeper](img/stock-keeper-dropdown.png) | ![Fenster „Crafter-Profile“](img/profile-manager.png) |
 
-*Screenshots aus dem automatischen Client-Test (kleine Auflösung 854×480).*
+*Screenshots aus dem automatischen Client-Test (kleine Auflösung 854×480, englische Sprache).*
+
+Die Oberfläche nutzt Creates eigene Stock-Keeper-Texturen (Papierkarten und Holz aus dem Kategorie-Editor), seine Farben, Tooltips und Klänge. Die Texturen werden aus Creates JAR gelesen, nicht kopiert.
 
 ## Was die Mod kann
 
@@ -12,16 +14,21 @@
    - Ohne aktives Profil entsteht ein neues Profil („Anlage 1“), sonst kommt der Bereich zum zuletzt bearbeiteten Profil. So landen z. B. die 21er-Anlage und danach ein 3×3-Feld im selben Profil.
    - Strg + Shift + Rechtsklick auf einen registrierten Bereich entfernt ihn. Auf einer neuen Gruppe startet es ein neues Profil.
    - Die Taste ist unter *Steuerung → Big Create Auto Crafter* umbelegbar. Strg ist auch die Sprint-Taste.
-2. **Auswahl im Stock Keeper:** Links neben dem Fenster sitzt ein Button. Ein Klick öffnet eine Liste mit allen Möglichkeiten in voller Länge:
-   - **Standard (Create 3×3):** Creates Verhalten, unverändert.
-   - **Anlage · Auto:** Der kleinste Bereich, in den das Rezept passt.
-   - **↳ Bereich:** Genau dieser Bereich.
-   - **Profile verwalten…:** Öffnet das Fenster „Crafter-Profile“.
-3. **Fenster „Crafter-Profile“:** Es öffnet sich aus der Liste oder über die Taste *Crafter-Profile öffnen*. Die ist standardmäßig nicht belegt und unter Steuerung einstellbar.
-   - **Umbenennen:** Namen ins Feld schreiben, dann Enter drücken oder ins nächste Feld klicken.
-   - **Paketadresse pro Bereich:** Das Feld neben dem Bereich. Wird der Bereich benutzt, trägt die Mod die Adresse automatisch in den Stock Keeper ein.
-   - **Löschen / Entfernen:** Zweimal klicken („Sicher?“). Wird der letzte Bereich eines Profils entfernt, verschwindet das Profil.
-   - **Fertig** führt zurück zum Stock Keeper.
+2. **Auswahl im Stock Keeper:** Links am Fensterrahmen, auf Höhe der Suchleiste, hängt ein Papier-Anhänger mit der aktuellen Wahl (Werkbank = Create 3×3, Mechanical Crafter = Anlage).
+   - **Maus darüber:** Tooltip im Create-Stil mit der vollen Wahl, den Bereichen und ihren Adressen.
+   - **Scrollen:** wechselt zur nächsten oder vorigen Möglichkeit, wie Creates Auswahlfelder.
+   - **Klick:** öffnet das Holz-Panel „Crafter-Anlage“ mit einer Karte pro Möglichkeit. Die gewählte Karte ist hellblau.
+     - **Standard (Create 3×3):** Creates Verhalten, unverändert.
+     - **Anlage · Auto:** Der kleinste Bereich, in den das Rezept passt.
+     - **Bereichskarten** (eingerückt, mit Faden an der Anlage): Genau dieser Bereich.
+     - **Profile verwalten…** (Schraubenschlüssel): Öffnet das Fenster „Crafter-Profile“.
+   - Klick daneben oder Esc schließt das Panel.
+3. **Fenster „Crafter-Profile“:** Aufgebaut wie Creates Kategorie-Editor des Stock Keepers. Es öffnet sich aus dem Panel oder über die Taste *Crafter-Profile öffnen*. Die ist standardmäßig nicht belegt und unter Steuerung einstellbar.
+   - **Profilkarte** mit Crafter-Symbol, darunter die **Bereichskarten** am Faden.
+   - **Umbenennen:** Auf den Namen klicken, tippen, Enter. Esc bricht ab, ein Klick daneben speichert.
+   - **Paketadresse pro Bereich:** Auf das Feld rechts in der Bereichskarte klicken. Wird der Bereich benutzt, trägt die Mod die Adresse automatisch in den Stock Keeper ein.
+   - **×:** Zweimal klicken (das × wird rot). Auf einer Profilkarte löscht es das Profil, auf einer Bereichskarte entfernt es den Bereich. Wird der letzte Bereich entfernt, verschwindet das Profil.
+   - **✓** (oder Esc) führt zurück zum Stock Keeper.
    - Dieselben Aktionen gibt es auch als Befehl: `/bcac list | select | rename | address | delete`.
 4. **JEI „+“:** Mit gewählter Anlage funktioniert das „+“ auch für Rezepte mit mehr als 9 Zutaten (z. B. Crushing Wheel, 21 Zutaten). Kleine Rezepte gehen in kleine Bereiche oder an die erste passende Stelle eines großen Bereichs.
 5. **Factory Gauge (automatisches Crafting):** Eine Gauge, deren Adresse die Paketadresse eines deiner Bereiche ist, craftet für diesen Bereich.
@@ -44,22 +51,26 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## So testest du im Spiel
 
-1. Lege `bigcreateautocrafter-0.1.0.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide brauchen dieselbe Version (Netzwerkprotokoll 4).
+1. Lege `bigcreateautocrafter-0.1.1.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 4, unverändert seit 0.1.0).
 2. Halte Strg und rechtsklicke die 21er-Anlage. Im Chat erscheint die Bestätigung.
 3. **Stock Keeper:**
-   1. Öffne den Stock Keeper, klicke den Button links und wähle **Profile verwalten…**.
-   2. Benenne das Profil um, trage die Paketadresse des Bereichs ein und klicke **Fertig**.
-   3. Wähle in der Liste die Anlage.
+   1. Öffne den Stock Keeper, klicke den Anhänger links und wähle **Profile verwalten…**.
+   2. Benenne das Profil um, trage die Paketadresse des Bereichs ein und klicke **✓**.
+   3. Wähle im Panel die Anlage (oder scrolle über dem Anhänger).
    4. Bestelle das Crushing Wheel per JEI „+“ und sende den Auftrag.
 4. **Factory Gauge:**
    1. Baue die Gauge wie bei Create: eine Gauge mit Crushing Wheel als Ziel, verbunden mit Eingangs-Gauges für Andesit, Bretter und Stein.
    2. Trage im Gauge-Fenster die Paketadresse des 21er-Bereichs ein.
    3. Schalte das Rezept ein und bestätige.
    4. **Erwartet:** Die Gauge fordert 16 / 4 / 1 an, und die Anlage craftet das Crushing Wheel.
-5. **Verwalten:** Lösche ein Test-Profil im Fenster mit zwei Klicks auf „Löschen“.
+5. **Verwalten:** Lösche ein Test-Profil im Fenster mit zwei Klicks auf das ×.
 
 ## Änderungen
 
+- **0.1.1:** Oberfläche im Stil des Stock Keepers, keine neuen Funktionen.
+  - Papier-Anhänger am Fensterrahmen statt des grauen Buttons, Auswahl als Holz-Panel mit Karten, Scrollen zum Wechseln.
+  - Fenster „Crafter-Profile“ im Aufbau von Creates Kategorie-Editor: Karten, Faden zu den Bereichen, Bearbeiten per Klick, × zum Löschen.
+  - Tooltips, Farben und Klänge wie bei Create.
 - **0.1.0:** Neue Bedienung und Factory Gauge.
   - Aufklappliste statt des abgeschnittenen Wechsel-Buttons.
   - Fenster „Crafter-Profile“ zum Umbenennen und Löschen, für Adressen und zum Entfernen von Bereichen. Dazu eine Taste zum Öffnen.
@@ -75,7 +86,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 ## Grenzen
 
 - **Echtes Craften mit Factory Gauges ist ungetestet.**
-  - Geprüft sind die Server-Logik (20 GameTests, darunter Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Liste, Profilfenster, Umbenennen über den Server).
+  - Geprüft sind die Server-Logik (20 GameTests, darunter Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Anhänger, Panel, Profilfenster, Umbenennen und Adresse über den Server).
   - Nicht getestet ist der volle Ablauf einer Gauge mit Paketwegen. Den Stock-Keeper-Weg hast du mit 0.0.2 im Spiel bestätigt.
 - **Gauge und Bereich müssen demselben Spieler gehören.** Der Client kennt nur die eigenen Profile.
 - **Höchstens 9 verschiedene Itemtypen pro Auftrag** (Create-Limit, unverändert).
