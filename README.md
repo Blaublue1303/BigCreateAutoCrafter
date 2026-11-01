@@ -1,25 +1,14 @@
+# Big Create Auto Crafter
 
-Installation information
-=======
+NeoForge-Mod (MC 1.21.1, NeoForge 21.1.250) für das Modpack **Create Exta+ 2.0**: erweitert den Create-Stock-Keeper-Crafting-Ablauf auf größere Mechanical-Crafter-Anlagen.
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+**Status: Version 0.1.3.** Strg + Rechtsklick registriert Crafter-Anlagen mit mehreren Bereichen. Im Stock Keeper wählst du die Anlage über einen Anhänger am Fenster und verwaltest Profile in einem eigenen Fenster (umbenennen, löschen, Adressen), beides im Stil von Creates Stock Keeper. JEIs „+“ und Factory Gauges craften damit auch große Rezepte, z. B. das Crushing Wheel mit 21 Zutaten. Anleitung und Grenzen stehen in `docs/07-prototyp-1.md`, die CurseForge-Seite (Logo, Beschreibung, Screenshots) in `curseforge/`.
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+- Analyse: `docs/01-phase1-analysis.md`, `docs/02-phase2-flow-analysis.md`
+- Plan, Risiken, Umgebung, TODO: `docs/03…06`
+- Bedienung, Test im Spiel, Grenzen: `docs/07-prototyp-1.md`
+- Build: `./gradlew build` (JDK 21)
+- Tests: `./gradlew runGameTestServer` (20 GameTests, headless) und `xvfb-run ./gradlew runClientSmokeTest` (Client)
+- Details zur Umgebung: `docs/05-dev-environment.md`
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
-
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
-
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+Die Mojang-Mappings (Parchment) unterliegen eigenen Lizenzen: https://github.com/NeoForged/NeoForm/blob/main/Mojang.md

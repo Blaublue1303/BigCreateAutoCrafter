@@ -27,7 +27,21 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    maven {
+        name = 'Create / Ponder / Flywheel'
+        url = 'https://maven.createmod.net'
+        content { includeGroup 'com.simibubi.create'; includeGroup 'net.createmod.ponder'; includeGroup 'dev.engine-room.flywheel' }
+    }
+    maven {
+        name = 'Registrate'
+        url = 'https://mvn.devos.one/snapshots'
+        content { includeGroup 'com.tterrag.registrate' }
+    }
+    maven {
+        name = 'JEI'
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei'; includeGroupByRegex 'net\\.mezzdev(\\..*)?' }
+    }
 }
 
 base {
@@ -95,6 +109,21 @@ neoForge {
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             logLevel = org.slf4j.event.Level.DEBUG
         }
+
+        // Keep automated test output readable (CI and local `runGameTestServer`).
+        gameTestServer {
+            logLevel = org.slf4j.event.Level.INFO
+        }
+
+        // Automated client check (needs a display, e.g. `xvfb-run ./gradlew runClientSmokeTest`), see ClientSmokeTest.
+        clientSmokeTest {
+            client()
+            gameDirectory = project.file('run-smoketest')
+            systemProperty 'bigcreateautocrafter.clientSmokeTest', 'true'
+            // large enough for project page screenshots and the item renders of the logo (GUI scale 3)
+            programArguments.addAll('--width', '1600', '--height', '900')
+            logLevel = org.slf4j.event.Level.INFO
+        }
     }
 
     mods {
@@ -116,27 +145,18 @@ configurations {
 }
 
 dependencies {
-    // Example optional mod dependency with JEI
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
-    // compileOnly "mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}"
-    // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
-    // localRuntime "mezz.jei:jei-${mc_version}-neoforge:${jei_version}"
+    // Create 6.0.10 (required). The slim JAR has no jar-in-jar, so its bundled mods are declared explicitly
+    // with the exact versions found in the release JAR's META-INF/jarjar/metadata.json.
+    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+    implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}") { transitive = false }
+    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
+    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
+    runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
 
-    // Example mod dependency using a mod jar from ./libs with a flat dir repository
-    // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
-    // The group id is ignored when searching -- in this case, it is "blank"
-    // implementation "blank:coolmod-${mc_version}:${coolmod_version}"
-
-    // Example mod dependency using a file as dependency
-    // implementation files("libs/coolmod-${mc_version}-${coolmod_version}.jar")
-
-    // Example project dependency using a sister or child project:
-    // implementation project(":myproject")
-
-    // For more info:
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+    // JEI (optional, client): compile against the API only, run with the full mod in dev.
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
+    localRuntime("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -151,6 +171,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_name               : mod_name,
             mod_license            : mod_license,
             mod_version            : mod_version,
+            create_version_range   : create_version_range,
     ]
     inputs.properties replaceProperties
     expand replaceProperties
@@ -179,6 +200,7 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs << '-Xlint:deprecation'
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.blaublue1303.bigcreateautocrafter.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ConnectedInputAccessor",
+    "CrafterUnpackingHandlerMixin",
+    "PackageRepackageHelperMixin"
+  ],
+  "client": [
+    "client.FactoryPanelScreenMixin",
+    "client.StockKeeperRequestScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
