@@ -32,9 +32,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(BigCreateAutoCrafter.MODID)
 @PrefixGameTestTemplate(false)
 public class RegionGameTests {
-    private static final String ARENA = "empty7";
 
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void scans21CrafterGroup(GameTestHelper helper) {
         List<String> layout = ProfileCodecGameTests.LAYOUT_21;
         ConnectedCrafterGroup group = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(layout));
@@ -46,7 +45,7 @@ public class RegionGameTests {
     }
 
     /** Asymmetric L-shape, both horizontal axes: the scanner's built-in check compares against Create's real order. */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void scansGroupsWithGapsOnBothAxes(GameTestHelper helper) {
         List<String> lShape = List.of("#.", "##");
         for (Direction facing : List.of(Direction.NORTH, Direction.EAST)) {
@@ -65,7 +64,7 @@ public class RegionGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void placesRecipesIntoRegions(GameTestHelper helper) {
         CrafterProfile profile = ProfileCodecGameTests.sampleProfile(); // regions: [5×5 (21), 3×3]
         Ingredient a = Ingredient.of(Items.IRON_INGOT);
@@ -98,11 +97,11 @@ public class RegionGameTests {
     }
 
     /** Real recipes from Create and vanilla through the recipe manager. */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void placesRealRecipes(GameTestHelper helper) {
         CrafterProfile profile = ProfileCodecGameTests.sampleProfile();
         GridRecipe crushingWheel = gridOf(helper, ResourceLocation.fromNamespaceAndPath("create", "mechanical_crafting/crushing_wheel"));
-        helper.assertTrue(crushingWheel.width() == 5 && crushingWheel.height() == 5 && crushingWheel.ingredientCount() == 21,
+        helper.assertTrue(crushingWheel.width() == 5 && crushingWheel.height() == 5 && crushingWheel.cells().stream().filter(i -> !i.isEmpty()).count() == 21,
                 "Crushing wheel is not 5×5 with 21 ingredients");
         Optional<Placement> wheel = RegionPlacer.place(crushingWheel, profile, -1);
         helper.assertTrue(wheel.isPresent() && wheel.get().regionIndex() == 0, "Crushing wheel must go to the 21 region");

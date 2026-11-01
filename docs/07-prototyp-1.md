@@ -20,6 +20,13 @@
 
 ## Änderungen
 
+- **0.0.3:** Code-Qualität, keine neuen Funktionen.
+  - Die Bereichs-Platzierung hängt direkt am Bestelleintrag. Die globale Merkliste und ihre Aufräumstellen sind weg.
+  - Der Repackager-Mixin greift nur noch an der einen Stelle ein, an der Create das abgeschnittene Paket hinzufügt. Creates Zählung bleibt dabei unangetastet.
+  - Strg + Rechtsklick braucht kein eigenes Tasten-Paket mehr: Der Server unterdrückt genau den einen Klick, für den ein Profil-Klick kam.
+  - Der Auswahl-Button baut Text und Tooltip nur bei Änderungen neu und nutzt Creates eigene JEI-Sperrzonen.
+  - Die tote Einstellung `autoSelectSmallestRegion` ist entfernt (sie hatte nie eine Wirkung).
+  - Client und Server brauchen dieselbe Version (Netzwerkprotokoll 3).
 - **0.0.2:** Fehler aus dem ersten Spieltest behoben. Beim Senden wurde die Bestellliste beim Bauen des Musters heruntergezählt. Create fand danach „0 Crafts“ und schickte den Auftrag **ohne** Crafting-Informationen. Die Crafter wurden dann einfach der Reihe nach gefüllt: erst alles Andesit, dann Holz, dann Stein, und die Tür kam kaputt an. Neuer GameTest `orderKeepsCraftingEntry` spielt Creates Zählschleife nach und hätte den Fehler gefunden.
 - **0.0.1:** erster Prototyp.
 
@@ -46,7 +53,7 @@ Die Mod ändert keine Blöcke, nur Muster und Paketierung.
 
 ## So testest du im Spiel
 
-1. Baue mit `./gradlew build` die Datei `build/libs/bigcreateautocrafter-0.0.2.jar` und lege sie auf Client **und** Server in den `mods`-Ordner (alte JAR entfernen).
+1. Baue mit `./gradlew build` die Datei `build/libs/bigcreateautocrafter-0.0.3.jar` und lege sie auf Client **und** Server in den `mods`-Ordner (alte JAR entfernen).
 2. Baue die 21er-Anlage (5×5 ohne Ecken, wie für das Crushing Wheel), verbinde sie mit dem Schraubenschlüssel und schließe sie wie deine 3×3-Anlage an.
 3. Halte Strg und rechtsklicke einen Crafter. Im Chat erscheint „Profil „Anlage 1“ mit Bereich 5×5 (21) angelegt“.
 4. Setze die Adresse mit `/bcac address 1 1 <deine Adresse>`.

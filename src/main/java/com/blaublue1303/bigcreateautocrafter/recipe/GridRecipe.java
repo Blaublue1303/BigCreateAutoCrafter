@@ -36,8 +36,4 @@ public record GridRecipe(int width, int height, List<Ingredient> cells, boolean 
         }
         return Optional.of(new GridRecipe(0, 0, nonEmpty, true));
     }
-
-    public int ingredientCount() {
-        return (int) cells.stream().filter(i -> !i.isEmpty()).count();
-    }
 }

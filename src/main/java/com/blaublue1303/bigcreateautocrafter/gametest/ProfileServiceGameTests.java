@@ -24,7 +24,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(BigCreateAutoCrafter.MODID)
 @PrefixGameTestTemplate(false)
 public class ProfileServiceGameTests {
-    @GameTest(template = "empty7")
+    @GameTest(template = TestCrafters.ARENA)
     public static void ctrlClickCreatesAndEditsProfiles(GameTestHelper helper) {
         ConnectedCrafterGroup big = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(ProfileCodecGameTests.LAYOUT_21, 3));
         ConnectedCrafterGroup small = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(ProfileCodecGameTests.LAYOUT_3X3, 5));

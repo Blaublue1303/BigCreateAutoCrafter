@@ -3,6 +3,7 @@ package com.blaublue1303.bigcreateautocrafter.gametest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.blaublue1303.bigcreateautocrafter.compat.create.ConnectedCrafterGroup;
@@ -46,7 +47,6 @@ import net.neoforged.neoforge.network.connection.ConnectionType;
 @GameTestHolder(BigCreateAutoCrafter.MODID)
 @PrefixGameTestTemplate(false)
 public class LogisticsGameTests {
-    private static final String ARENA = "empty7";
     private static final Item[] NINE = {Items.IRON_INGOT, Items.GOLD_INGOT, Items.COPPER_INGOT, Items.DIAMOND, Items.EMERALD,
             Items.REDSTONE, Items.LAPIS_LAZULI, Items.COAL, Items.QUARTZ};
 
@@ -70,7 +70,7 @@ public class LogisticsGameTests {
     }
 
     /** T3: a 21-slot pattern survives Create's network codec unchanged. */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void largePatternSurvivesNetwork(GameTestHelper helper) {
         List<BigItemStack> pattern = pattern(Items.IRON_INGOT, 21);
         pattern.set(0, new BigItemStack(ItemStack.EMPTY, 1));
@@ -84,7 +84,7 @@ public class LogisticsGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void repackagerPacksLargePatternByItem(GameTestHelper helper) {
         List<BigItemStack> pattern = pattern(Items.IRON_INGOT, 16);
         pattern.addAll(pattern(Items.GOLD_INGOT, 5));
@@ -106,7 +106,7 @@ public class LogisticsGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void repackagerSplitsUnstackablesAndInterleaves(GameTestHelper helper) {
         List<BigItemStack> pattern = pattern(Items.WATER_BUCKET, 21);
         InventorySummary summary = new InventorySummary();
@@ -126,7 +126,7 @@ public class LogisticsGameTests {
     }
 
     /** Patterns with 9 slots must keep Create's own packaging (slot i = pattern slot i). */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void repackagerKeepsCreateBehaviourFor3x3(GameTestHelper helper) {
         List<BigItemStack> pattern = new ArrayList<>();
         for (Item item : NINE) {
@@ -153,7 +153,7 @@ public class LogisticsGameTests {
      * turned into a pattern, packed, and unpacked by Create's own crafter unpacking handler. Every item must end up in
      * the crafter at its recipe position.
      */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void unpacksRecipeIntoRightCrafters(GameTestHelper helper) {
         List<String> layout = ProfileCodecGameTests.LAYOUT_21;
         ConnectedCrafterGroup group = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(layout));
@@ -171,7 +171,7 @@ public class LogisticsGameTests {
                 "Pattern must contain the nine items: " + pattern.size());
         helper.assertTrue(inputs.stream().allMatch(i -> i.count == 1), "PatternBuilder must not change the ordered amounts");
 
-        List<ItemStackHandler> parts = LargePatternPackaging.splitByItem(pattern);
+        List<List<ItemStack>> parts = LargePatternPackaging.splitByItem(pattern);
         helper.assertTrue(parts.size() == 1, "Nine items must fit into one package");
         boolean unpacked = CrafterUnpackingHandler.INSTANCE.unpack(helper.getLevel(), group.controller(), helper.getLevel().getBlockState(group.controller()),
                 group.facing(), contentsOf(parts.get(0)), PackageOrderWithCrafts.singleRecipe(pattern), false);
@@ -196,11 +196,11 @@ public class LogisticsGameTests {
     }
 
     /** T4 with a craft split over three packages: each package is accepted, and only the last completes the grid. */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void splitPackagesFillGridBeforeStart(GameTestHelper helper) {
         ConnectedCrafterGroup group = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(ProfileCodecGameTests.LAYOUT_21));
         List<BigItemStack> pattern = pattern(Items.WATER_BUCKET, 21);
-        List<ItemStackHandler> parts = LargePatternPackaging.splitByItem(pattern);
+        List<List<ItemStack>> parts = LargePatternPackaging.splitByItem(pattern);
         helper.assertTrue(parts.size() == 3, "Expected 3 packages for 21 unstackable items");
 
         PackageOrderWithCrafts context = PackageOrderWithCrafts.singleRecipe(pattern);
@@ -222,7 +222,7 @@ public class LogisticsGameTests {
      * sent the order without crafting information; the crafters were then filled one after another (all andesite alloy
      * first, then planks, ...). This replays Create 6.0.10's counting loop with our pattern builder.
      */
-    @GameTest(template = ARENA)
+    @GameTest(template = TestCrafters.ARENA)
     public static void orderKeepsCraftingEntry(GameTestHelper helper) {
         CrafterRegion region = new CrafterRegion("21", BlockPos.ZERO, Direction.NORTH, ProfileCodecGameTests.LAYOUT_21, "");
         // door-like recipe: 2 wide, 3 high, one item type
@@ -287,13 +287,8 @@ public class LogisticsGameTests {
         return crafter;
     }
 
-    private static List<ItemStack> contentsOf(ItemStackHandler handler) {
-        List<ItemStack> items = new ArrayList<>();
-        for (int i = 0; i < handler.getSlots(); i++) {
-            if (!handler.getStackInSlot(i).isEmpty()) {
-                items.add(handler.getStackInSlot(i).copy());
-            }
-        }
-        return items;
+    /** Fresh copies of a package's items, as Create's unpacking handler receives (and consumes) them. */
+    private static List<ItemStack> contentsOf(List<ItemStack> part) {
+        return part.stream().map(ItemStack::copy).collect(Collectors.toCollection(ArrayList::new));
     }
 }

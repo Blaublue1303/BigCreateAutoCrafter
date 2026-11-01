@@ -6,10 +6,10 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
-import com.blaublue1303.bigcreateautocrafter.client.ClientPlacements;
 import com.blaublue1303.bigcreateautocrafter.client.ClientSelection;
 import com.blaublue1303.bigcreateautocrafter.recipe.GridRecipe;
 import com.blaublue1303.bigcreateautocrafter.recipe.Placement;
+import com.blaublue1303.bigcreateautocrafter.recipe.RegionCraftable;
 import com.blaublue1303.bigcreateautocrafter.recipe.RegionPlacer;
 import com.simibubi.create.AllMenuTypes;
 import com.simibubi.create.compat.jei.StockKeeperTransferHandler;
@@ -39,7 +39,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
  *
  * <p>With "Standard" selected, the call is handed to Create's handler unchanged. With a profile selected, the recipe is
  * placed into a crafter region (limit L1 – more than 9 ingredients – no longer applies) and added to the order the same
- * way Create does it; the pattern for the region is produced later when the order is sent.
+ * way Create does it, as a {@link RegionCraftable}; the pattern for the region is produced when the order is sent.
  */
 public class RegionTransferHandler implements IRecipeTransferHandler<StockKeeperRequestMenu, RecipeHolder<CraftingRecipe>> {
     private static final String KEY = BigCreateAutoCrafter.MODID + ".transfer.";
@@ -86,23 +86,12 @@ public class RegionTransferHandler implements IRecipeTransferHandler<StockKeeper
         }
         ClientSelection.Option option = ClientSelection.current(player.level().dimension());
         if (option.isStandard()) {
-            if (doTransfer) {
-                ClientPlacements.remove(recipe.value());
-            }
             return createHandler.transferRecipe(menu, recipe, recipeSlots, player, maxTransfer, doTransfer);
         }
         if (!(menu.screenReference instanceof StockKeeperRequestScreen screen)) {
             return helper.createInternalError();
         }
-
-        Optional<GridRecipe> grid = GridRecipe.of(recipe.value());
-        if (grid.isEmpty()) {
-            return tooltip(Component.translatable(KEY + "unsupported"));
-        }
-        Optional<Placement> placement = RegionPlacer.place(grid.get(), option.profile(), option.regionIndex());
-        if (placement.isEmpty()) {
-            return tooltip(Component.translatable(KEY + "no_region", option.profile().name()));
-        }
+        // JEI calls this every tick per visible recipe: cheap checks first, placement last
         for (CraftableBigItemStack ordered : screen.recipesToOrder) {
             if (ordered.recipe == recipe.value()) {
                 return tooltip(Component.translatable("create.gui.stock_keeper.already_ordering_recipe"));
@@ -110,6 +99,14 @@ public class RegionTransferHandler implements IRecipeTransferHandler<StockKeeper
         }
         if (screen.itemsToOrder.size() >= CREATE_MAX_ORDER_TYPES) {
             return tooltip(Component.translatable("create.gui.stock_keeper.slots_full"));
+        }
+        Optional<GridRecipe> grid = GridRecipe.of(recipe.value());
+        if (grid.isEmpty()) {
+            return tooltip(Component.translatable(KEY + "unsupported"));
+        }
+        Optional<Placement> placement = RegionPlacer.place(grid.get(), option.profile(), option.regionIndex());
+        if (placement.isEmpty()) {
+            return tooltip(Component.translatable(KEY + "no_region", option.profile().name()));
         }
 
         InventorySummary stock = ((StockTickerBlockEntity) menu.contentHolder).getLastClientsideStockSnapshotAsSummary();
@@ -130,8 +127,7 @@ public class RegionTransferHandler implements IRecipeTransferHandler<StockKeeper
         if (result.isEmpty()) {
             return tooltip(Component.translatable("create.gui.stock_keeper.recipe_result_empty"));
         }
-        CraftableBigItemStack craftable = new CraftableBigItemStack(result, recipe.value());
-        ClientPlacements.put(recipe.value(), placement.get());
+        CraftableBigItemStack craftable = new RegionCraftable(result, recipe.value(), placement.get());
         screen.recipesToOrder.add(craftable);
         screen.searchBox.setValue("");
         screen.refreshSearchNextTick = true;

@@ -69,15 +69,12 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
 
     /** @return number of crafters in this region (= length of a recipe pattern for this region) */
     public int crafterCount() {
-        int count = 0;
-        for (String row : layout) {
-            for (int x = 0; x < row.length(); x++) {
-                if (row.charAt(x) == CRAFTER) {
-                    count++;
-                }
-            }
-        }
-        return count;
+        return countCrafters(layout);
+    }
+
+    /** The address for display; a dash when none is set. */
+    public String displayAddress() {
+        return address.isEmpty() ? "—" : address;
     }
 
     public CrafterRegion withAddress(String newAddress) {
@@ -86,9 +83,19 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
 
     /** Short label like {@code 5×5 (21)} used for auto-generated names. */
     public static String sizeLabel(List<String> layout) {
-        CrafterRegion probe = new CrafterRegion("probe", BlockPos.ZERO, Direction.NORTH, layout, "");
-        String size = probe.width() + "×" + probe.height();
-        return probe.crafterCount() == probe.width() * probe.height() ? size : size + " (" + probe.crafterCount() + ")";
+        int width = layout.isEmpty() ? 0 : layout.get(0).length();
+        int height = layout.size();
+        int crafters = countCrafters(layout);
+        String size = width + "×" + height;
+        return crafters == width * height ? size : size + " (" + crafters + ")";
+    }
+
+    private static int countCrafters(List<String> layout) {
+        int count = 0;
+        for (String row : layout) {
+            count += (int) row.chars().filter(c -> c == CRAFTER).count();
+        }
+        return count;
     }
 
     public static DataResult<CrafterRegion> validate(CrafterRegion region) {
@@ -101,7 +108,7 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
         if (!region.facing().getAxis().isHorizontal()) {
             return DataResult.error(() -> "Region facing must be horizontal: " + region.facing());
         }
-        if (region.layout().isEmpty() || region.width() == 0) {
+        if (region.width() == 0) {
             return DataResult.error(() -> "Region layout must not be empty");
         }
         int width = region.width();

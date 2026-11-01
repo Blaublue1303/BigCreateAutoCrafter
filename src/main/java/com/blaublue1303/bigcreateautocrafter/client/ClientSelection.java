@@ -18,7 +18,7 @@ import net.minecraft.world.level.Level;
  * region choice, or one specific region. Kept for the whole session.
  */
 public final class ClientSelection {
-    private static final String KEY = BigCreateAutoCrafter.MODID + ".selector.";
+    static final String KEY = BigCreateAutoCrafter.MODID + ".selector.";
 
     @Nullable
     private static UUID selectedProfile;
@@ -47,12 +47,9 @@ public final class ClientSelection {
             }
             return Component.translatable(KEY + "region", profile.name(), profile.regions().get(regionIndex).name());
         }
-
-        boolean matches(@Nullable UUID profileId, int region) {
-            return profile == null ? profileId == null : profile.id().equals(profileId) && regionIndex == region;
-        }
     }
 
+    /** Standard, then per profile of this dimension: Auto and (if it has several regions) each region. */
     public static List<Option> options(ResourceKey<Level> dimension) {
         List<Option> options = new ArrayList<>();
         options.add(Option.STANDARD);
@@ -70,10 +67,18 @@ public final class ClientSelection {
         return options;
     }
 
+    /** The selected option, or Standard if the selected profile/region no longer exists in this dimension. */
     public static Option current(ResourceKey<Level> dimension) {
-        for (Option option : options(dimension)) {
-            if (option.matches(selectedProfile, selectedRegion)) {
-                return option;
+        if (selectedProfile == null) {
+            return Option.STANDARD;
+        }
+        for (CrafterProfile profile : ClientProfileCache.all()) {
+            if (profile.id().equals(selectedProfile) && profile.dimension().equals(dimension)) {
+                if (selectedRegion < 0) {
+                    return new Option(profile, -1);
+                }
+                boolean listed = profile.regions().size() > 1 && selectedRegion < profile.regions().size();
+                return listed ? new Option(profile, selectedRegion) : Option.STANDARD;
             }
         }
         return Option.STANDARD;
@@ -81,13 +86,7 @@ public final class ClientSelection {
 
     public static void cycle(ResourceKey<Level> dimension, int direction) {
         List<Option> options = options(dimension);
-        int index = 0;
-        for (int i = 0; i < options.size(); i++) {
-            if (options.get(i).matches(selectedProfile, selectedRegion)) {
-                index = i;
-                break;
-            }
-        }
+        int index = Math.max(0, options.indexOf(current(dimension)));
         Option next = options.get(Math.floorMod(index + direction, options.size()));
         selectedProfile = next.profile() == null ? null : next.profile().id();
         selectedRegion = next.regionIndex();

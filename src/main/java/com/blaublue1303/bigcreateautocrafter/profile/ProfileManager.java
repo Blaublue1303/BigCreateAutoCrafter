@@ -1,7 +1,5 @@
 package com.blaublue1303.bigcreateautocrafter.profile;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +31,6 @@ public class ProfileManager extends SavedData {
         return server.overworld().getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
     }
 
-    public Collection<CrafterProfile> all() {
-        return Collections.unmodifiableCollection(profiles.values());
-    }
-
     public Optional<CrafterProfile> byId(UUID id) {
         return Optional.ofNullable(profiles.get(id));
     }
@@ -51,12 +45,10 @@ public class ProfileManager extends SavedData {
         setDirty();
     }
 
-    public boolean remove(UUID id) {
-        boolean removed = profiles.remove(id) != null;
-        if (removed) {
+    public void remove(UUID id) {
+        if (profiles.remove(id) != null) {
             setDirty();
         }
-        return removed;
     }
 
     @Override

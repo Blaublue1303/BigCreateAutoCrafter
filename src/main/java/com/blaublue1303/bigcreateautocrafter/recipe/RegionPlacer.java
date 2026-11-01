@@ -25,22 +25,24 @@ public final class RegionPlacer {
      * @param regionIndex -1 = automatic: the region with the fewest crafters that fits (ties: profile order)
      */
     public static Optional<Placement> place(GridRecipe recipe, CrafterProfile profile, int regionIndex) {
+        List<CrafterRegion> regions = profile.regions();
         List<Integer> candidates = new ArrayList<>();
         if (regionIndex >= 0) {
-            if (regionIndex < profile.regions().size()) {
+            if (regionIndex < regions.size()) {
                 candidates.add(regionIndex);
             }
         } else {
-            for (int i = 0; i < profile.regions().size(); i++) {
+            int[] crafterCounts = new int[regions.size()];
+            for (int i = 0; i < regions.size(); i++) {
+                crafterCounts[i] = regions.get(i).crafterCount();
                 candidates.add(i);
             }
-            candidates.sort(Comparator.comparingInt(i -> profile.regions().get(i).crafterCount()));
+            candidates.sort(Comparator.comparingInt(i -> crafterCounts[i]));
         }
         for (int index : candidates) {
-            CrafterRegion region = profile.regions().get(index);
-            Optional<List<Ingredient>> template = templateFor(recipe, region);
+            Optional<List<Ingredient>> template = templateFor(recipe, regions.get(index));
             if (template.isPresent()) {
-                return Optional.of(new Placement(profile.id(), index, region, template.get()));
+                return Optional.of(new Placement(index, regions.get(index), template.get()));
             }
         }
         return Optional.empty();
@@ -70,9 +72,6 @@ public final class RegionPlacer {
     }
 
     private static Optional<List<Ingredient>> fit(int width, int height, List<Ingredient> cells, CrafterRegion region) {
-        if (width > region.width() || height > region.height()) {
-            return Optional.empty();
-        }
         for (int offsetY = 0; offsetY + height <= region.height(); offsetY++) {
             for (int offsetX = 0; offsetX + width <= region.width(); offsetX++) {
                 if (covers(width, height, cells, region, offsetX, offsetY)) {

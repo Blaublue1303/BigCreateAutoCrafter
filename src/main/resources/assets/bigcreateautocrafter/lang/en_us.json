@@ -8,7 +8,6 @@
   "bigcreateautocrafter.configuration.maxRegionHeight": "Max region height",
   "bigcreateautocrafter.configuration.maxRegionsPerProfile": "Max regions per profile",
   "bigcreateautocrafter.configuration.maxProfilesPerPlayer": "Max profiles per player",
-  "bigcreateautocrafter.configuration.autoSelectSmallestRegion": "Auto-select smallest fitting region",
   "message.bigcreateautocrafter.not_a_group": "This is not a usable Mechanical Crafter group.",
   "message.bigcreateautocrafter.region_invalid": "This crafter group cannot be used: %s",
   "message.bigcreateautocrafter.profile_created": "Created profile \"%s\" with region %s.",

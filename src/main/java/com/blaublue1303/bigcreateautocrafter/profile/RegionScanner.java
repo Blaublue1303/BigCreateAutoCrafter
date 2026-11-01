@@ -12,11 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
 /**
- * Turns a connected crafter group into a {@link CrafterRegion} layout.
- *
- * <p>Rows run from the highest Y down. Columns follow the axis and direction Create itself uses to sort crafter
- * inventories ({@code ConnectedInput.getInventories}). The result is checked against the order Create actually
- * returned, so a change in Create's ordering is detected instead of silently producing wrong patterns.
+ * Turns a connected crafter group into a {@link CrafterRegion} layout whose {@code '#'} cells, read row by row, are in
+ * exactly the order Create returns the crafter inventories ({@code ConnectedInput.getInventories}).
  */
 public final class RegionScanner {
     private RegionScanner() {
@@ -27,16 +24,18 @@ public final class RegionScanner {
     }
 
     public static DataResult<List<String>> layoutOf(ConnectedCrafterGroup group, int maxWidth, int maxHeight) {
-        Direction facing = group.facing();
-        Direction.Axis depthAxis = facing.getAxis();
-        int depth = depthAxis.choose(group.controller().getX(), group.controller().getY(), group.controller().getZ());
+        Direction.Axis depthAxis = group.facing().getAxis();
+        int depth = group.controller().get(depthAxis);
         for (BlockPos member : group.members()) {
-            if (depthAxis.choose(member.getX(), member.getY(), member.getZ()) != depth) {
+            if (member.get(depthAxis) != depth) {
                 return DataResult.error(() -> "Crafter group is not flat");
             }
         }
 
         List<Cell> cells = cellsOf(group);
+        if (cells.isEmpty()) {
+            return DataResult.error(() -> "Create's crafter order does not match a row-by-row layout");
+        }
         int width = cells.stream().mapToInt(Cell::column).max().orElse(-1) + 1;
         int height = cells.stream().mapToInt(Cell::row).max().orElse(-1) + 1;
         if (width > maxWidth || height > maxHeight) {
@@ -50,14 +49,6 @@ public final class RegionScanner {
         for (Cell cell : cells) {
             grid[cell.row()][cell.column()] = CrafterRegion.CRAFTER;
         }
-
-        // Reading the layout row by row must reproduce Create's own inventory order.
-        List<Cell> rowMajor = new ArrayList<>(cells);
-        rowMajor.sort(Comparator.comparingInt(Cell::row).thenComparingInt(Cell::column));
-        if (!rowMajor.equals(cells)) {
-            return DataResult.error(() -> "Create's crafter order does not match the expected layout order");
-        }
-
         List<String> layout = new ArrayList<>(height);
         for (char[] row : grid) {
             layout.add(new String(row));
@@ -66,26 +57,39 @@ public final class RegionScanner {
     }
 
     /**
-     * Grid cell of every member, in the member order of {@code group} (= Create's inventory order).
-     * Mirrors Create 6.0.10's comparator: Y descending, then along {@code facing.getClockWise().getAxis()} with
-     * sign {@code facing.getAxisDirection().getStep() * (axis == Z ? -1 : 1)}.
+     * Grid cell of every member, in the member order of {@code group} (= Create's inventory order), or an empty list if
+     * that order is not row by row. Rows run from the highest Y down; columns run along the horizontal axis of the group's
+     * plane, in whichever direction makes reading the cells row by row reproduce Create's order. The direction is taken
+     * from Create's actual order instead of re-implementing its private comparator.
      */
     public static List<Cell> cellsOf(ConnectedCrafterGroup group) {
-        Direction facing = group.facing();
-        Direction.Axis columnAxis = facing.getClockWise().getAxis();
-        int sign = facing.getAxisDirection().getStep() * (columnAxis == Direction.Axis.Z ? -1 : 1);
+        Direction.Axis columnAxis = group.facing().getClockWise().getAxis();
+        for (int sign : new int[] {1, -1}) {
+            List<Cell> cells = cellsWithColumnSign(group, columnAxis, sign);
+            if (isRowByRow(cells)) {
+                return cells;
+            }
+        }
+        return List.of();
+    }
 
+    private static List<Cell> cellsWithColumnSign(ConnectedCrafterGroup group, Direction.Axis columnAxis, int sign) {
         int maxY = Integer.MIN_VALUE;
-        int minKey = Integer.MAX_VALUE;
+        int minColumn = Integer.MAX_VALUE;
         for (BlockPos member : group.members()) {
             maxY = Math.max(maxY, member.getY());
-            minKey = Math.min(minKey, sign * columnAxis.choose(member.getX(), member.getY(), member.getZ()));
+            minColumn = Math.min(minColumn, sign * member.get(columnAxis));
         }
         List<Cell> cells = new ArrayList<>(group.size());
         for (BlockPos member : group.members()) {
-            int key = sign * columnAxis.choose(member.getX(), member.getY(), member.getZ());
-            cells.add(new Cell(key - minKey, maxY - member.getY()));
+            cells.add(new Cell(sign * member.get(columnAxis) - minColumn, maxY - member.getY()));
         }
         return cells;
+    }
+
+    private static boolean isRowByRow(List<Cell> cells) {
+        List<Cell> sorted = new ArrayList<>(cells);
+        sorted.sort(Comparator.comparingInt(Cell::row).thenComparingInt(Cell::column));
+        return sorted.equals(cells);
     }
 }

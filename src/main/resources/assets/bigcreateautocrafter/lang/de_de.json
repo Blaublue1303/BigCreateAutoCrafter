@@ -8,7 +8,6 @@
   "bigcreateautocrafter.configuration.maxRegionHeight": "Max. Bereichshöhe",
   "bigcreateautocrafter.configuration.maxRegionsPerProfile": "Max. Bereiche pro Profil",
   "bigcreateautocrafter.configuration.maxProfilesPerPlayer": "Max. Profile pro Spieler",
-  "bigcreateautocrafter.configuration.autoSelectSmallestRegion": "Kleinsten passenden Bereich automatisch wählen",
   "message.bigcreateautocrafter.not_a_group": "Das ist keine nutzbare Mechanical-Crafter-Gruppe.",
   "message.bigcreateautocrafter.region_invalid": "Diese Crafter-Gruppe kann nicht verwendet werden: %s",
   "message.bigcreateautocrafter.profile_created": "Profil „%s“ mit Bereich %s angelegt.",

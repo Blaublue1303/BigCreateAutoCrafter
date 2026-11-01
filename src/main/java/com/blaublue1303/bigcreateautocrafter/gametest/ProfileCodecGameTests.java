@@ -34,7 +34,7 @@ public class ProfileCodecGameTests {
                 new CrafterRegion("3x3", new BlockPos(20, 64, -3), Direction.EAST, LAYOUT_3X3, "")));
     }
 
-    @GameTest(template = "empty7")
+    @GameTest(template = TestCrafters.ARENA)
     public static void profileSurvivesNbtAndNetwork(GameTestHelper helper) {
         CrafterProfile profile = sampleProfile();
 
@@ -57,7 +57,7 @@ public class ProfileCodecGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty7")
+    @GameTest(template = TestCrafters.ARENA)
     public static void invalidRegionsAreRejected(GameTestHelper helper) {
         BlockPos pos = BlockPos.ZERO;
         List<CrafterRegion> invalid = List.of(

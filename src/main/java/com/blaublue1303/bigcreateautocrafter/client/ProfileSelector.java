@@ -1,23 +1,24 @@
 package com.blaublue1303.bigcreateautocrafter.client;
 
+import static com.blaublue1303.bigcreateautocrafter.client.ClientSelection.KEY;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
+import com.blaublue1303.bigcreateautocrafter.profile.CrafterProfile;
 import com.blaublue1303.bigcreateautocrafter.profile.CrafterRegion;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
+import com.simibubi.create.foundation.gui.AllGuiTextures;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.sounds.SoundEvents;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 
 /**
@@ -25,28 +26,22 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
  * Drawn and clicked through screen events, so Create's own widget handling stays untouched.
  */
 public final class ProfileSelector {
-    private static final String KEY = BigCreateAutoCrafter.MODID + ".selector.";
     private static final int MAX_WIDTH = 120;
     private static final int MIN_WIDTH = 64;
     private static final int HEIGHT = 16;
-    /** Create 6.0.10 draws the Stock Keeper window from {@code guiLeft - 15}, 256 px wide (AllGuiTextures.STOCK_KEEPER_REQUEST_*). */
-    private static final int WINDOW_OFFSET_X = -15;
-    private static final int WINDOW_TEXTURE_WIDTH = 256;
     private static final int GAP = 3;
+    /** Create 6.0.10 draws the Stock Keeper window from {@code guiLeft - 15} with the width of its header texture. */
+    private static final int WINDOW_OFFSET_X = -15;
 
     @Nullable
     private static Button button;
+    /** Inputs the button's label and tooltip were last built from; rebuilt only when these change. */
+    @Nullable
+    private static List<CrafterProfile> shownProfiles;
+    @Nullable
+    private static ClientSelection.Option shownOption;
 
     private ProfileSelector() {
-    }
-
-    /** Area for JEI to keep free. */
-    public static List<Rect2i> extraAreas() {
-        Button current = button;
-        if (current == null || !(Minecraft.getInstance().screen instanceof StockKeeperRequestScreen)) {
-            return List.of();
-        }
-        return List.of(new Rect2i(current.getX(), current.getY(), current.getWidth(), current.getHeight()));
     }
 
     public static void onInit(ScreenEvent.Init.Post event) {
@@ -55,7 +50,7 @@ public final class ProfileSelector {
         }
         // Prefer the left side (JEI's ingredient list is on the right); never overlap Create's window.
         int windowLeft = screen.getGuiLeft() + WINDOW_OFFSET_X;
-        int windowRight = windowLeft + WINDOW_TEXTURE_WIDTH;
+        int windowRight = windowLeft + AllGuiTextures.STOCK_KEEPER_REQUEST_HEADER.getWidth();
         int leftSpace = windowLeft - 2 * GAP;
         int rightSpace = screen.width - windowRight - 2 * GAP;
         int x;
@@ -70,35 +65,29 @@ public final class ProfileSelector {
             width = MIN_WIDTH;
             x = GAP;
         }
-        button = Button.builder(Component.empty(), b -> {}).bounds(x, screen.getGuiTop() + 4, width, HEIGHT).build();
+        int y = screen.getGuiTop() + 4;
+        button = Button.builder(Component.empty(), b -> {}).bounds(x, y, width, HEIGHT).build();
+        shownOption = null;
+        // Create rebuilds this list in every init and hands it to JEI as area to keep free.
+        screen.getExtraAreas().add(new Rect2i(x, y, width, HEIGHT));
     }
 
     public static void onRender(ScreenEvent.Render.Post event) {
         Button current = button;
-        if (current == null || !(event.getScreen() instanceof StockKeeperRequestScreen)) {
-            return;
-        }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
+        if (current == null || mc.level == null || !(event.getScreen() instanceof StockKeeperRequestScreen)) {
             return;
         }
+        List<CrafterProfile> profiles = ClientProfileCache.all();
         ClientSelection.Option option = ClientSelection.current(mc.level.dimension());
-        String label = mc.font.plainSubstrByWidth(option.label().getString(), current.getWidth() - 8);
-        current.setMessage(Component.literal(label));
-        // Vanilla widget tooltip: registered for the screen's next tooltip pass while hovered.
-        current.setTooltip(Tooltip.create(joinLines(tooltip(option))));
-        current.render(event.getGuiGraphics(), event.getMouseX(), event.getMouseY(), event.getPartialTick());
-    }
-
-    private static Component joinLines(List<Component> lines) {
-        MutableComponent joined = Component.empty();
-        for (int i = 0; i < lines.size(); i++) {
-            if (i > 0) {
-                joined.append("\n");
-            }
-            joined.append(lines.get(i));
+        if (profiles != shownProfiles || !option.equals(shownOption)) {
+            current.setMessage(Component.literal(mc.font.plainSubstrByWidth(option.label().getString(), current.getWidth() - 8)));
+            // vanilla widget tooltip: shown in the screen's next tooltip pass while hovered
+            current.setTooltip(Tooltip.create(CommonComponents.joinLines(tooltip(option, profiles.isEmpty()))));
+            shownProfiles = profiles;
+            shownOption = option;
         }
-        return joined;
+        current.render(event.getGuiGraphics(), event.getMouseX(), event.getMouseY(), event.getPartialTick());
     }
 
     public static void onMouseClicked(ScreenEvent.MouseButtonPressed.Pre event) {
@@ -109,12 +98,12 @@ public final class ProfileSelector {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null && (event.getButton() == 0 || event.getButton() == 1)) {
             ClientSelection.cycle(mc.level.dimension(), event.getButton() == 0 ? 1 : -1);
-            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            current.playDownSound(mc.getSoundManager());
         }
         event.setCanceled(true);
     }
 
-    private static List<Component> tooltip(ClientSelection.Option option) {
+    private static List<Component> tooltip(ClientSelection.Option option, boolean noProfiles) {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.translatable(KEY + "title").withStyle(ChatFormatting.GOLD));
         lines.add(option.label().copy().withStyle(ChatFormatting.WHITE));
@@ -129,14 +118,13 @@ public final class ProfileSelector {
             lines.add(regionLine(option.profile().regions().get(option.regionIndex())));
         }
         lines.add(Component.translatable(KEY + "controls").withStyle(ChatFormatting.DARK_GRAY));
-        if (ClientProfileCache.all().isEmpty()) {
+        if (noProfiles) {
             lines.add(Component.translatable(KEY + "no_profiles").withStyle(ChatFormatting.DARK_GRAY));
         }
         return lines;
     }
 
     private static Component regionLine(CrafterRegion region) {
-        String address = region.address().isEmpty() ? "—" : region.address();
-        return Component.literal(" • " + region.name() + "  → " + address).withStyle(ChatFormatting.GRAY);
+        return Component.literal(" • " + region.name() + "  → " + region.displayAddress()).withStyle(ChatFormatting.GRAY);
     }
 }

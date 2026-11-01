@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.simibubi.create.compat.jei.CreateJEI;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestMenu;
 
 import mezz.jei.api.constants.RecipeTypes;
@@ -26,14 +27,12 @@ public final class JeiSmokeCheck {
     /** @return result lines starting with PASS or FAIL */
     public static List<String> check(StockKeeperRequestMenu menu) {
         List<String> results = new ArrayList<>();
-        IJeiRuntime runtime = JeiRuntimeHolder.get();
+        IJeiRuntime runtime = CreateJEI.runtime;
         if (runtime == null) {
             results.add("FAIL JEI runtime not available");
             return results;
         }
-        RecipeType<RecipeHolder<CraftingRecipe>> mechanical =
-                RecipeType.createRecipeHolderType(ResourceLocation.fromNamespaceAndPath("create", "mechanical_crafting"));
-        for (RecipeType<RecipeHolder<CraftingRecipe>> type : List.of(RecipeTypes.CRAFTING, mechanical)) {
+        for (RecipeType<RecipeHolder<CraftingRecipe>> type : List.of(RecipeTypes.CRAFTING, BcacJeiPlugin.MECHANICAL_CRAFTING)) {
             try {
                 IRecipeCategory<RecipeHolder<CraftingRecipe>> category = runtime.getRecipeManager().getRecipeCategory(type);
                 Optional<IRecipeTransferHandler<StockKeeperRequestMenu, RecipeHolder<CraftingRecipe>>> handler =
@@ -45,7 +44,7 @@ public final class JeiSmokeCheck {
                 results.add("FAIL JEI handler lookup for " + type.getUid() + ": " + e);
             }
         }
-        results.add(transferCrushingWheel(runtime, menu, mechanical));
+        results.add(transferCrushingWheel(runtime, menu));
         return results;
     }
 
@@ -55,13 +54,13 @@ public final class JeiSmokeCheck {
      * missing stock (the test world has no items).
      */
     @SuppressWarnings("removal")
-    private static String transferCrushingWheel(IJeiRuntime runtime, StockKeeperRequestMenu menu, RecipeType<RecipeHolder<CraftingRecipe>> mechanical) {
+    private static String transferCrushingWheel(IJeiRuntime runtime, StockKeeperRequestMenu menu) {
         try {
             Minecraft mc = Minecraft.getInstance();
             @SuppressWarnings("unchecked")
             RecipeHolder<CraftingRecipe> recipe = (RecipeHolder<CraftingRecipe>) mc.level.getRecipeManager()
                     .byKey(ResourceLocation.fromNamespaceAndPath("create", "mechanical_crafting/crushing_wheel")).orElseThrow();
-            IRecipeCategory<RecipeHolder<CraftingRecipe>> category = runtime.getRecipeManager().getRecipeCategory(mechanical);
+            IRecipeCategory<RecipeHolder<CraftingRecipe>> category = runtime.getRecipeManager().getRecipeCategory(BcacJeiPlugin.MECHANICAL_CRAFTING);
             IRecipeLayoutDrawable<RecipeHolder<CraftingRecipe>> layout = runtime.getRecipeManager()
                     .createRecipeLayoutDrawable(category, recipe, runtime.getJeiHelpers().getFocusFactory().getEmptyFocusGroup())
                     .orElseThrow();

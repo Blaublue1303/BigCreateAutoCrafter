@@ -1,8 +1,5 @@
 package com.blaublue1303.bigcreateautocrafter.compat.create;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,37 +50,32 @@ public final class CreateCompat {
             return Optional.empty();
         }
 
-        // Create's own ordering: index of each crafter's inventory in getInventories(...)
+        // Create's own ordering: position of each member = index of its inventory in getInventories(...)
         List<MechanicalCrafterBlockEntity.Inventory> inventories = input.getInventories(level, controllerPos);
         Map<MechanicalCrafterBlockEntity.Inventory, Integer> createOrder = new IdentityHashMap<>();
         for (int i = 0; i < inventories.size(); i++) {
             createOrder.put(inventories.get(i), i);
         }
-
-        List<BlockPos> members = new ArrayList<>();
-        Map<BlockPos, Integer> orderByPos = new HashMap<>();
+        BlockPos[] members = new BlockPos[inventories.size()];
+        int found = 0;
         synchronized (accessor.bcac$getData()) {
             for (BlockPos offset : accessor.bcac$getData()) {
                 BlockPos memberPos = controllerPos.offset(offset);
                 MechanicalCrafterBlockEntity member = CrafterHelper.getCrafter(level, memberPos);
-                if (member == null) {
-                    continue;
-                }
-                Integer index = createOrder.get(member.getInventory());
-                if (index == null) {
+                Integer index = member == null ? null : createOrder.get(member.getInventory());
+                if (index == null || members[index] != null) {
                     return Optional.empty();
                 }
-                members.add(memberPos);
-                orderByPos.put(memberPos, index);
+                members[index] = memberPos;
+                found++;
             }
         }
-        if (members.size() != inventories.size()) {
+        if (found != members.length) {
             return Optional.empty();
         }
-        members.sort(Comparator.comparingInt(orderByPos::get));
 
         Direction facing = controller.getBlockState().getValue(HorizontalKineticBlock.HORIZONTAL_FACING);
-        return Optional.of(new ConnectedCrafterGroup(controllerPos, facing, members));
+        return Optional.of(new ConnectedCrafterGroup(controllerPos, facing, List.of(members)));
     }
 
     private static BlockPos controllerOf(MechanicalCrafterBlockEntity crafter) {

@@ -15,6 +15,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 
 /** Builds connected Mechanical Crafter groups in GameTests, the same way Create's wrench connects them. */
 final class TestCrafters {
+    /** Empty 7×7×7 test arena ({@code data/bigcreateautocrafter/structure/empty7.nbt}). */
+    static final String ARENA = "empty7";
+
     private TestCrafters() {
     }
 

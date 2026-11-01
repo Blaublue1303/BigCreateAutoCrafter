@@ -3,7 +3,6 @@ package com.blaublue1303.bigcreateautocrafter.profile;
 import java.util.List;
 import java.util.Optional;
 
-import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -22,7 +21,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * Profiles and regions are addressed by the 1-based numbers shown by {@code /bcac list}.
  */
 public final class BcacCommands {
-    private static final String MSG = "message." + BigCreateAutoCrafter.MODID + ".";
+    private static final String MSG = ProfileService.MSG;
 
     private BcacCommands() {
     }
@@ -65,9 +64,8 @@ public final class BcacCommands {
             for (int r = 0; r < profile.regions().size(); r++) {
                 CrafterRegion region = profile.regions().get(r);
                 int regionNumber = r + 1;
-                String address = region.address().isEmpty() ? "—" : region.address();
                 ctx.getSource().sendSuccess(() -> Component.literal("   " + regionNumber + ") " + region.name()
-                        + "  @ " + region.controller().toShortString() + "  → " + address).withStyle(ChatFormatting.GRAY), false);
+                        + "  @ " + region.controller().toShortString() + "  → " + region.displayAddress()).withStyle(ChatFormatting.GRAY), false);
             }
         }
         return own.size();
@@ -87,15 +85,16 @@ public final class BcacCommands {
     private static int rename(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         Optional<CrafterProfile> profile = profile(ctx, player);
-        String name = StringArgumentType.getString(ctx, "name").trim();
         if (profile.isEmpty()) {
             return 0;
         }
-        if (name.isEmpty() || name.length() > CrafterProfile.MAX_NAME_LENGTH) {
+        String name = StringArgumentType.getString(ctx, "name").trim();
+        CrafterProfile renamed = profile.get().withName(name);
+        if (CrafterProfile.validate(renamed).error().isPresent()) {
             ctx.getSource().sendFailure(Component.translatable(MSG + "bad_name", CrafterProfile.MAX_NAME_LENGTH));
             return 0;
         }
-        ProfileService.save(player, profile.get().withName(name));
+        ProfileService.save(player, renamed);
         ctx.getSource().sendSuccess(() -> Component.translatable(MSG + "renamed", name), false);
         return 1;
     }
@@ -111,14 +110,13 @@ public final class BcacCommands {
             ctx.getSource().sendFailure(Component.translatable(MSG + "no_such_region", regionIndex + 1));
             return 0;
         }
-        String address = rawAddress.trim();
-        if (address.length() > CrafterRegion.MAX_ADDRESS_LENGTH) {
+        CrafterRegion region = profile.get().regions().get(regionIndex).withAddress(rawAddress.trim());
+        if (CrafterRegion.validate(region).error().isPresent()) {
             ctx.getSource().sendFailure(Component.translatable(MSG + "bad_address", CrafterRegion.MAX_ADDRESS_LENGTH));
             return 0;
         }
-        CrafterRegion region = profile.get().regions().get(regionIndex).withAddress(address);
         ProfileService.save(player, profile.get().withRegionReplaced(regionIndex, region));
-        ctx.getSource().sendSuccess(() -> Component.translatable(MSG + "address_set", region.name(), address.isEmpty() ? "—" : address), false);
+        ctx.getSource().sendSuccess(() -> Component.translatable(MSG + "address_set", region.name(), region.displayAddress()), false);
         return 1;
     }
 

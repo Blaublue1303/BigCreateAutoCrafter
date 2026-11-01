@@ -3,7 +3,6 @@ package com.blaublue1303.bigcreateautocrafter.profile;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,43 +30,49 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  * removes the group from its profile, or starts a new profile if the group is not registered yet.
  */
 public final class ProfileService {
-    private static final String MSG = "message." + BigCreateAutoCrafter.MODID + ".";
+    static final String MSG = "message." + BigCreateAutoCrafter.MODID + ".";
+    /** How long a profile click cancels the vanilla use of the clicked block (the use packet follows right after). */
+    private static final int SUPPRESS_USE_TICKS = 20;
 
-    /** Players currently holding the profile modifier key (reported by the client). */
-    private static final Set<UUID> MODIFIER_HELD = ConcurrentHashMap.newKeySet();
+    private record SuppressedUse(BlockPos pos, long untilGameTime) {
+    }
+
+    /** Pending cancellation of Create's normal crafter interaction for the block a player just profile-clicked. */
+    private static final Map<UUID, SuppressedUse> SUPPRESSED_USE = new ConcurrentHashMap<>();
     /** Profile each player edits with Ctrl + right-click. */
     private static final Map<UUID, UUID> ACTIVE_PROFILE = new ConcurrentHashMap<>();
 
     private ProfileService() {
     }
 
-    public static void setModifierHeld(ServerPlayer player, boolean held) {
-        if (held) {
-            MODIFIER_HELD.add(player.getUUID());
-        } else {
-            MODIFIER_HELD.remove(player.getUUID());
-        }
-    }
-
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        MODIFIER_HELD.remove(event.getEntity().getUUID());
+        SUPPRESSED_USE.remove(event.getEntity().getUUID());
         ACTIVE_PROFILE.remove(event.getEntity().getUUID());
     }
 
-    /** Server side: suppress Create's normal crafter interaction while the player edits profiles. */
+    /**
+     * Server side: the client sends the profile click before the vanilla use packet for the same click, so that use
+     * (Create inserting/taking items) is cancelled here.
+     */
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         Player player = event.getEntity();
-        if (player.level().isClientSide() || !MODIFIER_HELD.contains(player.getUUID())) {
+        SuppressedUse suppressed = player.level().isClientSide() ? null : SUPPRESSED_USE.get(player.getUUID());
+        if (suppressed == null) {
             return;
         }
-        if (CreateCompat.isMechanicalCrafter(player.level().getBlockState(event.getPos()))) {
+        boolean current = player.level().getGameTime() <= suppressed.untilGameTime();
+        if (current && suppressed.pos().equals(event.getPos())) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
+        }
+        if (!current || suppressed.pos().equals(event.getPos())) {
+            SUPPRESSED_USE.remove(player.getUUID());
         }
     }
 
     public static void handleCrafterClick(ServerPlayer player, BlockPos pos, boolean secondary) {
         ServerLevel level = player.serverLevel();
+        SUPPRESSED_USE.put(player.getUUID(), new SuppressedUse(pos.immutable(), level.getGameTime() + SUPPRESS_USE_TICKS));
         if (!level.isLoaded(pos) || !player.canInteractWithBlock(pos, 1.0)) {
             return;
         }
@@ -77,40 +82,39 @@ public final class ProfileService {
             return;
         }
         BlockPos controller = group.get().controller();
-        ProfileManager manager = ProfileManager.get(player.server);
-        List<CrafterProfile> own = manager.byOwner(player.getUUID());
+        List<CrafterProfile> own = ProfileManager.get(player.server).byOwner(player.getUUID());
 
         for (CrafterProfile profile : own) {
             int index = profile.dimension().equals(level.dimension()) ? profile.indexOfRegion(controller) : -1;
             if (index < 0) {
                 continue;
             }
-            CrafterRegion region = profile.regions().get(index);
             if (secondary) {
-                removeRegion(player, manager, profile, index);
+                removeRegion(player, profile, index);
             } else {
                 ACTIVE_PROFILE.put(player.getUUID(), profile.id());
-                tell(player, Component.translatable(MSG + "region_exists", region.name(), profile.name()).withStyle(ChatFormatting.YELLOW));
+                tell(player, Component.translatable(MSG + "region_exists", profile.regions().get(index).name(), profile.name())
+                        .withStyle(ChatFormatting.YELLOW));
             }
             return;
         }
 
-        DataResult<List<String>> layout = RegionScanner.layoutOf(group.get(), Config.MAX_REGION_WIDTH.get(), Config.MAX_REGION_HEIGHT.get());
-        if (layout.error().isPresent()) {
-            tell(player, Component.translatable(MSG + "region_invalid", layout.error().get().message()).withStyle(ChatFormatting.RED));
+        DataResult<List<String>> scanned = RegionScanner.layoutOf(group.get(), Config.MAX_REGION_WIDTH.get(), Config.MAX_REGION_HEIGHT.get());
+        if (scanned.error().isPresent()) {
+            tell(player, Component.translatable(MSG + "region_invalid", scanned.error().get().message()).withStyle(ChatFormatting.RED));
             return;
         }
-        CrafterRegion region = new CrafterRegion(CrafterRegion.sizeLabel(layout.getOrThrow()), controller, group.get().facing(),
-                layout.getOrThrow(), "");
+        List<String> layout = scanned.getOrThrow();
+        CrafterRegion region = new CrafterRegion(CrafterRegion.sizeLabel(layout), controller, group.get().facing(), layout, "");
 
-        Optional<CrafterProfile> active = secondary ? Optional.empty() : activeProfile(player, manager);
+        Optional<CrafterProfile> active = secondary ? Optional.empty() : activeProfile(player);
         if (active.isPresent()) {
             CrafterProfile profile = active.get();
             if (profile.regions().size() >= Config.MAX_REGIONS_PER_PROFILE.get()) {
                 tell(player, Component.translatable(MSG + "limit_regions", Config.MAX_REGIONS_PER_PROFILE.get()).withStyle(ChatFormatting.RED));
                 return;
             }
-            manager.put(profile.withRegionAdded(region));
+            save(player, profile.withRegionAdded(region));
             tell(player, Component.translatable(MSG + "region_added", region.name(), profile.name()).withStyle(ChatFormatting.GREEN));
         } else {
             if (own.size() >= Config.MAX_PROFILES_PER_PLAYER.get()) {
@@ -118,30 +122,27 @@ public final class ProfileService {
                 return;
             }
             CrafterProfile profile = new CrafterProfile(UUID.randomUUID(), nextProfileName(own), level.dimension(), player.getUUID(), List.of(region));
-            manager.put(profile);
-            ACTIVE_PROFILE.put(player.getUUID(), profile.id());
+            save(player, profile);
+            select(player, profile);
             tell(player, Component.translatable(MSG + "profile_created", profile.name(), region.name()).withStyle(ChatFormatting.GREEN));
         }
         tell(player, Component.translatable(MSG + "address_hint").withStyle(ChatFormatting.GRAY));
-        ProfileSync.syncTo(player);
     }
 
-    private static void removeRegion(ServerPlayer player, ProfileManager manager, CrafterProfile profile, int index) {
-        CrafterRegion region = profile.regions().get(index);
+    private static void removeRegion(ServerPlayer player, CrafterProfile profile, int index) {
         if (profile.regions().size() == 1) {
-            manager.remove(profile.id());
-            ACTIVE_PROFILE.remove(player.getUUID(), profile.id());
+            delete(player, profile);
             tell(player, Component.translatable(MSG + "profile_removed", profile.name()).withStyle(ChatFormatting.YELLOW));
         } else {
-            manager.put(profile.withRegionRemoved(index));
-            tell(player, Component.translatable(MSG + "region_removed", region.name(), profile.name()).withStyle(ChatFormatting.YELLOW));
+            save(player, profile.withRegionRemoved(index));
+            tell(player, Component.translatable(MSG + "region_removed", profile.regions().get(index).name(), profile.name())
+                    .withStyle(ChatFormatting.YELLOW));
         }
-        ProfileSync.syncTo(player);
     }
 
-    private static Optional<CrafterProfile> activeProfile(ServerPlayer player, ProfileManager manager) {
+    private static Optional<CrafterProfile> activeProfile(ServerPlayer player) {
         UUID id = ACTIVE_PROFILE.get(player.getUUID());
-        return Optional.ofNullable(id).flatMap(manager::byId)
+        return Optional.ofNullable(id).flatMap(ProfileManager.get(player.server)::byId)
                 .filter(p -> p.owner().equals(player.getUUID()) && p.dimension().equals(player.level().dimension()));
     }
 
@@ -154,7 +155,7 @@ public final class ProfileService {
         }
     }
 
-    // ---- command helpers (indices are 1-based, as shown by /bcac list) ----
+    // ---- shared with the /bcac commands (indices are 1-based, as shown by /bcac list) ----
 
     public static Optional<CrafterProfile> profileByIndex(ServerPlayer player, int index) {
         List<CrafterProfile> own = ProfileManager.get(player.server).byOwner(player.getUUID());
@@ -165,6 +166,7 @@ public final class ProfileService {
         ACTIVE_PROFILE.put(player.getUUID(), profile.id());
     }
 
+    /** Stores the profile (new or changed) and syncs the owner's client. */
     public static void save(ServerPlayer player, CrafterProfile profile) {
         ProfileManager.get(player.server).put(profile);
         ProfileSync.syncTo(player);
