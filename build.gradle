@@ -120,6 +120,8 @@ neoForge {
             client()
             gameDirectory = project.file('run-smoketest')
             systemProperty 'bigcreateautocrafter.clientSmokeTest', 'true'
+            // large enough for project page screenshots and the item renders of the logo (GUI scale 3)
+            programArguments.addAll('--width', '1600', '--height', '900')
             logLevel = org.slf4j.event.Level.INFO
         }
     }

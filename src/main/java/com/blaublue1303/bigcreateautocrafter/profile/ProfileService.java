@@ -122,7 +122,7 @@ public final class ProfileService {
                 tell(player, Component.translatable(MSG + "limit_profiles", Config.MAX_PROFILES_PER_PLAYER.get()).withStyle(ChatFormatting.RED));
                 return;
             }
-            CrafterProfile profile = new CrafterProfile(UUID.randomUUID(), nextProfileName(own), level.dimension(), player.getUUID(), List.of(region));
+            CrafterProfile profile = new CrafterProfile(UUID.randomUUID(), nextProfileName(player, own), level.dimension(), player.getUUID(), List.of(region));
             save(player, profile);
             select(player, profile);
             tell(player, Component.translatable(MSG + "profile_created", profile.name(), region.name()).withStyle(ChatFormatting.GREEN));
@@ -191,9 +191,11 @@ public final class ProfileService {
                 .filter(p -> p.owner().equals(player.getUUID()) && p.dimension().equals(player.level().dimension()));
     }
 
-    private static String nextProfileName(List<CrafterProfile> own) {
+    /** "Anlage n" for German clients, "Setup n" otherwise (the name is stored, so it is chosen once by the creator's language). */
+    private static String nextProfileName(ServerPlayer player, List<CrafterProfile> own) {
+        String prefix = player.clientInformation().language().startsWith("de") ? "Anlage " : "Setup ";
         for (int n = 1; ; n++) {
-            String candidate = "Anlage " + n;
+            String candidate = prefix + n;
             if (own.stream().noneMatch(p -> p.name().equals(candidate))) {
                 return candidate;
             }

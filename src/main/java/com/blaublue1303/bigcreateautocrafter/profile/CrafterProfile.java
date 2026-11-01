@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 /**
- * A crafter setup ("Anlage") created via Ctrl + right-click on a Mechanical Crafter. Holds one or more
+ * A crafter setup created via Ctrl + right-click on a Mechanical Crafter. Holds one or more
  * {@link CrafterRegion}s, e.g. a large 21-crafter area plus a small 3×3 area.
  *
  * @param id        stable id

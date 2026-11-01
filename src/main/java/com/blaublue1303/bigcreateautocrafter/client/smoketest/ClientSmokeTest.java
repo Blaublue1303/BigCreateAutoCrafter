@@ -44,6 +44,7 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.client.tutorial.TutorialSteps;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -78,12 +79,13 @@ public final class ClientSmokeTest {
     public static final String PROPERTY = "bigcreateautocrafter.clientSmokeTest";
     private static final int TIMEOUT_TICKS = 20 * 60;
 
-    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, TAG_TOOLTIP, DROPDOWN, MANAGER, RENAMED,
-        GAUGE_SETUP, GAUGE_OPEN, GAUGE_SAVE, GAUGE_CHECK, DONE }
+    private enum Phase { WAIT_TITLE, LOADING_WORLD, WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, TAG_TOOLTIP, DROPDOWN, MANAGER, RENAMED,
+        GAUGE_SETUP, GAUGE_OPEN, GAUGE_SAVE, GAUGE_CHECK, ITEM_RENDERS, DONE }
 
     private static Phase phase = Phase.WAIT_TITLE;
     private static int ticks;
     private static final List<String> RESULTS = new ArrayList<>();
+    private static volatile BlockPos origin;
     private static volatile BlockPos tickerPos;
     private static volatile BlockPos gaugePos;
     private static CompletableFuture<String> gaugeCheck;
@@ -128,6 +130,26 @@ public final class ClientSmokeTest {
                 case LOADING_WORLD -> {
                     if (mc.player != null && mc.screen == null && mc.getSingleplayerServer() != null && mc.player.onGround() && ticks > 40) {
                         setUpOnServer(mc.getSingleplayerServer(), mc.player.getUUID());
+                        next(Phase.WORLD);
+                    }
+                }
+                case WORLD -> {
+                    IntegratedServer server = mc.getSingleplayerServer();
+                    UUID playerId = mc.player.getUUID();
+                    if (ticks == 10) {
+                        server.execute(() -> Showcase.stageWorld(server.getPlayerList().getPlayer(playerId), origin));
+                    }
+                    if (ticks == 90) {
+                        // the chat still shows the confirmations of the Ctrl + right-clicks
+                        screenshot(mc, "bcac-world-chat.png");
+                        mc.options.hideGui = true;
+                    }
+                    if (ticks == 95) {
+                        screenshot(mc, "bcac-world.png");
+                        mc.options.hideGui = false;
+                        server.execute(() -> Showcase.returnPlayer(server.getPlayerList().getPlayer(playerId), origin));
+                    }
+                    if (ticks == 115) {
                         next(Phase.OPEN_SCREEN);
                     }
                 }
@@ -177,15 +199,15 @@ public final class ClientSmokeTest {
                     }
                     if (ticks > 20 && mc.screen instanceof ProfileManagerScreen manager) {
                         RESULTS.add((manager.rowCount() == 3 ? "PASS" : "FAIL") + " profile menu shows " + manager.rowCount() + " cards (profile + 2 regions)");
-                        manager.editCardForTest(0, "Testanlage");
-                        manager.editCardForTest(1, "crafter_gross");
+                        manager.editCardForTest(0, "Wheel Factory");
+                        manager.editCardForTest(1, "big_crafter");
                         next(Phase.MANAGER);
                     }
                 }
                 case MANAGER -> {
                     // the rename goes to the server and comes back with the next profile sync
-                    if (!ClientProfileCache.all().isEmpty() && ClientProfileCache.all().get(0).name().equals("Testanlage")
-                            && ClientProfileCache.all().get(0).regions().get(0).address().equals("crafter_gross")) {
+                    if (!ClientProfileCache.all().isEmpty() && ClientProfileCache.all().get(0).name().equals("Wheel Factory")
+                            && ClientProfileCache.all().get(0).regions().get(0).address().equals("big_crafter")) {
                         RESULTS.add("PASS rename and address from the profile menu reached the server and came back");
                         next(Phase.RENAMED);
                     }
@@ -233,6 +255,13 @@ public final class ClientSmokeTest {
                 case GAUGE_CHECK -> {
                     if (gaugeCheck.isDone()) {
                         RESULTS.add(gaugeCheck.join());
+                        mc.setScreen(new Showcase.ItemRenders());
+                        next(Phase.ITEM_RENDERS);
+                    }
+                }
+                case ITEM_RENDERS -> {
+                    if (ticks == 10) {
+                        screenshot(mc, "bcac-item-renders.png");
                         next(Phase.DONE);
                     }
                 }
@@ -268,6 +297,8 @@ public final class ClientSmokeTest {
     }
 
     private static void createWorld(Minecraft mc) {
+        // no movement tutorial toast over the screenshots
+        mc.getTutorial().setStep(TutorialSteps.NONE);
         String name = "bcac-smoke-" + System.currentTimeMillis();
         LevelSettings settings = new LevelSettings(name, GameType.CREATIVE, false, Difficulty.PEACEFUL, true, new GameRules(),
                 WorldDataConfiguration.DEFAULT);
@@ -281,7 +312,7 @@ public final class ClientSmokeTest {
         server.execute(() -> {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             ServerLevel level = player.serverLevel();
-            BlockPos origin = player.blockPosition();
+            origin = player.blockPosition();
             BlockState crafter = AllBlocks.MECHANICAL_CRAFTER.getDefaultState().setValue(HorizontalKineticBlock.HORIZONTAL_FACING, Direction.SOUTH);
             List<BlockPos> positions = new ArrayList<>();
             for (int dy = 0; dy < 5; dy++) {
@@ -409,8 +440,10 @@ public final class ClientSmokeTest {
     private static void next(Phase newPhase) {
         phase = newPhase;
         ticks = 0;
-        // keep the mouse in the corner so no tooltip covers the screenshots
-        moveMouse(Minecraft.getInstance(), 0, 0);
+        // keep the mouse in the corner so no tooltip covers the screenshots (in the world it would turn the camera)
+        if (Minecraft.getInstance().screen != null) {
+            moveMouse(Minecraft.getInstance(), 0, 0);
+        }
     }
 
     /**

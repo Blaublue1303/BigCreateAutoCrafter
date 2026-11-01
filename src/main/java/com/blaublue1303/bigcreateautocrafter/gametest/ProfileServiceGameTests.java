@@ -36,8 +36,8 @@ public class ProfileServiceGameTests {
         try {
             ProfileService.handleCrafterClick(player, big.members().get(4), false);
             List<CrafterProfile> own = manager.byOwner(player.getUUID());
-            helper.assertTrue(own.size() == 1 && own.get(0).name().equals("Anlage 1") && own.get(0).regions().size() == 1,
-                    "First click must create profile 'Anlage 1': " + own);
+            helper.assertTrue(own.size() == 1 && own.get(0).name().equals("Setup 1") && own.get(0).regions().size() == 1,
+                    "First click must create profile 'Setup 1' (fake players use en_us): " + own);
             helper.assertTrue(own.get(0).regions().get(0).crafterCount() == 21 && own.get(0).regions().get(0).name().equals("5×5 (21)"),
                     "Region must be the 21-crafter group: " + own.get(0).regions());
 

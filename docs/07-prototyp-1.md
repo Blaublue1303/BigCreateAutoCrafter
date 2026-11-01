@@ -1,21 +1,21 @@
-# Bedienung, Test im Spiel und Grenzen (Version 0.1.2)
+# Bedienung, Test im Spiel und Grenzen (Version 0.1.3)
 
 | Anhänger am Stock Keeper | Auswahl „Crafter-Anlage“ | Fenster „Crafter-Profile“ |
 |---|---|---|
 | ![Anhänger mit Tooltip](img/stock-keeper-selector.png) | ![Auswahl am Stock Keeper](img/stock-keeper-dropdown.png) | ![Fenster „Crafter-Profile“](img/profile-manager.png) |
 
-| Factory Gauge mit Crushing Wheel | Tooltip einer Zutat |
-|---|---|
-| ![Gauge mit 1 / 16 / 4 pro Craft](img/factory-gauge.png) | ![Tooltip mit Bereich](img/factory-gauge-tooltip.png) |
+| 21er-Anlage mit Crushing-Wheel-Zutaten | Factory Gauge mit Crushing Wheel | Tooltip einer Zutat |
+|---|---|---|
+| ![21er-Anlage](img/crafter-setup.png) | ![Gauge mit 1 / 16 / 4 pro Craft](img/factory-gauge.png) | ![Tooltip mit Bereich](img/factory-gauge-tooltip.png) |
 
-*Screenshots aus dem automatischen Client-Test (kleine Auflösung 854×480, englische Sprache).*
+*Screenshots aus dem automatischen Client-Test (1600×900, englische Sprache). Die Seite für CurseForge liegt in `curseforge/`.*
 
 Die Oberfläche nutzt Creates eigene Stock-Keeper-Texturen (Papierkarten und Holz aus dem Kategorie-Editor), seine Farben, Tooltips und Klänge. Die Texturen werden aus Creates JAR gelesen, nicht kopiert.
 
 ## Was die Mod kann
 
 1. **Anlage registrieren:** Strg halten und einen Mechanical Crafter rechtsklicken. Die ganze verbundene Crafter-Gruppe wird als Bereich gespeichert.
-   - Ohne aktives Profil entsteht ein neues Profil („Anlage 1“), sonst kommt der Bereich zum zuletzt bearbeiteten Profil. So landen z. B. die 21er-Anlage und danach ein 3×3-Feld im selben Profil.
+   - Ohne aktives Profil entsteht ein neues Profil („Anlage 1“, bei englischer Spielsprache „Setup 1“), sonst kommt der Bereich zum zuletzt bearbeiteten Profil. So landen z. B. die 21er-Anlage und danach ein 3×3-Feld im selben Profil.
    - Strg + Shift + Rechtsklick auf einen registrierten Bereich entfernt ihn. Auf einer neuen Gruppe startet es ein neues Profil.
    - Die Taste ist unter *Steuerung → Big Create Auto Crafter* umbelegbar. Strg ist auch die Sprint-Taste.
 2. **Auswahl im Stock Keeper:** Links am Fensterrahmen, auf Höhe der Suchleiste, hängt ein Papier-Anhänger mit der aktuellen Wahl (Werkbank = Create 3×3, Mechanical Crafter = Anlage).
@@ -57,7 +57,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## So testest du im Spiel
 
-1. Lege `bigcreateautocrafter-0.1.2.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 4, unverändert seit 0.1.0).
+1. Lege `bigcreateautocrafter-0.1.3.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 4, unverändert seit 0.1.0).
 2. Halte Strg und rechtsklicke die 21er-Anlage. Im Chat erscheint die Bestätigung.
 3. **Stock Keeper:**
    1. Öffne den Stock Keeper, klicke den Anhänger links und wähle **Profile verwalten…**.
@@ -74,6 +74,10 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## Änderungen
 
+- **0.1.3:** Für CurseForge vorbereitet.
+  - Neue Profile heißen bei englischer Spielsprache „Setup 1“, bei deutscher weiter „Anlage 1“.
+  - Logo, englische Beschreibung und Screenshots liegen in `curseforge/`.
+  - Der Client-Test nimmt auch die Anlage in der Welt auf (mit Crushing-Wheel-Zutaten über Creates Entpacker) und rendert die Items fürs Logo.
 - **0.1.2:** Factory Gauge mit großen Rezepten repariert (Spieltest: „Use Mechanical Crafting“ für das Crushing Wheel forderte nur 1 / 1 / 1 an).
   - Ursache: Die Gauge-Adresse musste genau die Paketadresse eines Bereichs sein. Sonst schaltete die Mod das Crafting beim Speichern ab, und Create bestellte je 1 Stück.
   - Jetzt nimmt die Gauge bei großen Rezepten den passenden Bereich selbst, die Adresse bestimmt nur das Ziel der Pakete.
