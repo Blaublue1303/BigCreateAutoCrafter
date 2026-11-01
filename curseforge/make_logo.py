@@ -1,7 +1,9 @@
 """Builds the CurseForge project logo (400 x 400 PNG) from the in-game item renders of the client smoke test.
 
 Input: run-smoketest/screenshots/bcac-item-renders.png (Mechanical Crafter left, Crushing Wheel right, on magenta).
-Usage: python3 -I curseforge/make_logo.py <item-renders.png> <logo.png>
+Usage: python3 -I curseforge/make_logo.py <item-renders.png> <logo.png> [--round]
+  default: rounded square with the crafter and a crushing wheel
+  --round: round logo with one large crafter, nothing else
 """
 import sys
 
@@ -24,7 +26,15 @@ def cut_out(render, box):
     return part.crop(part.getbbox())
 
 
-def background():
+def shape_outline(draw, box, round_logo, radius, **kwargs):
+    """Draws the logo's outline shape: a circle or a rounded square."""
+    if round_logo:
+        draw.ellipse(box, **kwargs)
+    else:
+        draw.rounded_rectangle(box, radius=radius, **kwargs)
+
+
+def background(round_logo=False):
     big = SIZE * SCALE
     radius = 72 * SCALE
     # blueprint blue, lighter in the middle
@@ -49,16 +59,16 @@ def background():
     bg = Image.alpha_composite(bg, grid)
     # vignette
     vignette = Image.new("L", (big, big), 0)
-    ImageDraw.Draw(vignette).rounded_rectangle((0, 0, big, big), radius=radius, outline=255, width=46 * SCALE)
+    shape_outline(ImageDraw.Draw(vignette), (0, 0, big, big), round_logo, radius, outline=255, width=46 * SCALE)
     vignette = vignette.filter(ImageFilter.GaussianBlur(40 * SCALE))
     dark = Image.new("RGBA", (big, big), (8, 22, 60, 255))
     dark.putalpha(ImageChops.multiply(vignette, Image.new("L", (big, big), 170)))
     bg = Image.alpha_composite(bg, dark)
     # frame: dark outline with a light inner rim
     frame = ImageDraw.Draw(bg)
-    frame.rounded_rectangle((0, 0, big - 1, big - 1), radius=radius, outline=(14, 34, 78, 255), width=7 * SCALE)
-    frame.rounded_rectangle((7 * SCALE, 7 * SCALE, big - 7 * SCALE, big - 7 * SCALE), radius=radius - 7 * SCALE,
-                            outline=(150, 200, 255, 150), width=2 * SCALE)
+    shape_outline(frame, (0, 0, big - 1, big - 1), round_logo, radius, outline=(14, 34, 78, 255), width=7 * SCALE)
+    shape_outline(frame, (7 * SCALE, 7 * SCALE, big - 7 * SCALE, big - 7 * SCALE), round_logo, radius - 7 * SCALE,
+                  outline=(150, 200, 255, 150), width=2 * SCALE)
     # gloss on the upper half
     gloss = Image.new("L", (big, big), 0)
     ImageDraw.Draw(gloss).ellipse((-big // 3, -big * 3 // 4, big * 4 // 3, big // 2), fill=44)
@@ -68,7 +78,7 @@ def background():
     bg = Image.alpha_composite(bg, white)
     # rounded corners
     mask = Image.new("L", (big, big), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, big - 1, big - 1), radius=radius, fill=255)
+    shape_outline(ImageDraw.Draw(mask), (0, 0, big - 1, big - 1), round_logo, radius, fill=255)
     bg.putalpha(mask)
     return bg.resize((SIZE, SIZE), Image.LANCZOS)
 
@@ -84,12 +94,21 @@ def with_shadow(canvas, item, pos, blur=10, offset=(6, 10), alpha=150):
     return canvas
 
 
-def main(source, target):
+def main(source, target, round_logo=False):
     render = Image.open(source).convert("RGB")
     half = render.width // 2
     crafter = cut_out(render, (0, 0, half, render.height))
-    wheel = cut_out(render, (half, 0, render.width, render.height))
 
+    if round_logo:
+        # one large crafter, centred in the circle (its corners must stay inside)
+        crafter = crafter.resize((262, round(262 * crafter.height / crafter.width)), Image.LANCZOS)
+        logo = background(round_logo=True)
+        logo = with_shadow(logo, crafter, ((SIZE - crafter.width) // 2, (SIZE - crafter.height) // 2 - 6), blur=12, offset=(6, 12))
+        logo.putalpha(background(round_logo=True).getchannel("A"))
+        logo.save(target)
+        return
+
+    wheel = cut_out(render, (half, 0, render.width, render.height))
     crafter = crafter.resize((250, round(250 * crafter.height / crafter.width)), Image.LANCZOS)
     wheel = wheel.resize((150, round(150 * wheel.height / wheel.width)), Image.LANCZOS)
 
@@ -104,4 +123,4 @@ def main(source, target):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], "--round" in sys.argv[3:])

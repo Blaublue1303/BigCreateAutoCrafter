@@ -4,8 +4,9 @@ Alles für die Projektseite auf CurseForge. Beschreibung und Bildtexte sind auf 
 
 | Datei | Inhalt |
 |---|---|
-| `logo.png` | **Empfohlenes Logo** (400 × 400). Komplett selbst gezeichnet, ohne Create- oder Minecraft-Texturen. |
-| `logo-create-renders.png` | Alternative im Stil deiner Beispiel-Icons, mit echten Renders von Mechanical Crafter und Crushing Wheel. Siehe „Logo“ unten. |
+| `logo-round.png` | **Rundes Logo** (400 × 400) wie deine Beispiel-Icons: ein großer 3D-Mechanical-Crafter (echter Render aus dem Spiel), ohne Items. Siehe „Logo“ unten. |
+| `logo.png` | Selbst gezeichnete Variante ohne Create- oder Minecraft-Texturen (21er-Raster mit Zahnrad). |
+| `logo-create-renders.png` | Abgerundetes Quadrat mit Mechanical Crafter und Crushing Wheel (echte Renders). |
 | `description.md` | Projektbeschreibung (Markdown). |
 | `screenshots/` | Echte In-Game-Screenshots (1600 × 900, unbearbeitet) aus dem automatischen Client-Test. |
 | `make_logo.py`, `make_logo_original.py` | Skripte, die die Logos erzeugen. |
@@ -16,7 +17,7 @@ Alles für die Projektseite auf CurseForge. Beschreibung und Bildtexte sind auf 
    - **Name:** Big Create Auto Crafter
    - **Summary:** `Order and auto-craft recipes bigger than 3×3 with Create's Stock Keeper and Factory Gauges`
    - **Kategorie:** z. B. Technology / Automation
-   - **Logo:** `logo.png`
+   - **Logo:** `logo-round.png` (oder eine der anderen Varianten)
    - **Lizenz:** im Mod steht bisher „All Rights Reserved“. Das musst du entscheiden.
 2. **Bilder:** Lade die Dateien aus `screenshots/` im Tab *Images* hoch.
 3. **Beschreibung:**
@@ -38,14 +39,14 @@ Alles für die Projektseite auf CurseForge. Beschreibung und Bildtexte sind auf 
   - Die Beschreibung muss erklären, was die Mod hinzufügt.
   - Inhalte anderer Autoren nur mit Erlaubnis oder passender Lizenz, mit Credits.
 
-## Logo: warum zwei Varianten
+## Logo: Varianten und Lizenz
 
 Creates Lizenz trennt Code und Grafik (Datei `LICENSE.md` in Creates JAR):
 
 - **Code:** MIT.
 - **Grafiken** (`assets/`): „All Rights Reserved“.
 
-`logo-create-renders.png` zeigt Creates Block-Texturen. Viele Create-Addons machen das so, auch deine Beispiel-Icons. Nach der Avatar-Regel („keine urheberrechtlich geschützten Bilder“) ist es aber ein Risiko bei der Moderation. `logo.png` hat dieses Risiko nicht.
+`logo-round.png` und `logo-create-renders.png` zeigen Creates Block-Texturen. Viele Create-Addons machen das so, auch deine Beispiel-Icons. Nach der Avatar-Regel („keine urheberrechtlich geschützten Bilder“) kann die Moderation das aber bemängeln. Dann ist `logo.png` der Ersatz, es hat dieses Risiko nicht.
 
 Die Mod selbst liefert keine Create-Grafiken mit. Die Menüs lesen die Texturen zur Laufzeit aus dem installierten Create.
 
@@ -53,6 +54,7 @@ Die Mod selbst liefert keine Create-Grafiken mit. Die Menüs lesen die Texturen 
 
 ```
 xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientSmokeTest
+python3 -I curseforge/make_logo.py run-smoketest/screenshots/bcac-item-renders.png curseforge/logo-round.png --round
 python3 -I curseforge/make_logo.py run-smoketest/screenshots/bcac-item-renders.png curseforge/logo-create-renders.png
 python3 -I curseforge/make_logo_original.py curseforge/logo.png
 ```
