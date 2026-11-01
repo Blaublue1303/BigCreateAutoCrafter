@@ -84,11 +84,8 @@ public final class ClientSelection {
         return Option.STANDARD;
     }
 
-    public static void cycle(ResourceKey<Level> dimension, int direction) {
-        List<Option> options = options(dimension);
-        int index = Math.max(0, options.indexOf(current(dimension)));
-        Option next = options.get(Math.floorMod(index + direction, options.size()));
-        selectedProfile = next.profile() == null ? null : next.profile().id();
-        selectedRegion = next.regionIndex();
+    public static void select(Option option) {
+        selectedProfile = option.profile() == null ? null : option.profile().id();
+        selectedRegion = option.regionIndex();
     }
 }

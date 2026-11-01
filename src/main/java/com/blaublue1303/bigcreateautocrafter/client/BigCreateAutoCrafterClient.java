@@ -23,6 +23,8 @@ public class BigCreateAutoCrafterClient {
         NeoForge.EVENT_BUS.addListener(ProfileSelector::onInit);
         NeoForge.EVENT_BUS.addListener(ProfileSelector::onRender);
         NeoForge.EVENT_BUS.addListener(ProfileSelector::onMouseClicked);
+        NeoForge.EVENT_BUS.addListener(ProfileSelector::onKeyPressed);
+        NeoForge.EVENT_BUS.addListener(BcacKeyMappings::onClientTick);
         if (ClientSmokeTest.enabled()) {
             NeoForge.EVENT_BUS.addListener(ClientSmokeTest::onClientTick);
             NeoForge.EVENT_BUS.addListener(ClientSmokeTest::onScreenOpening);

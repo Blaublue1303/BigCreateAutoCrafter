@@ -6,7 +6,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 /** Registers all network payloads of the mod. */
 public final class BcacNetwork {
     /** Bump on any incompatible payload change. */
-    public static final String PROTOCOL_VERSION = "3";
+    public static final String PROTOCOL_VERSION = "4";
 
     private BcacNetwork() {
     }
@@ -15,5 +15,6 @@ public final class BcacNetwork {
         PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
         registrar.playToClient(SyncProfilesPayload.TYPE, SyncProfilesPayload.STREAM_CODEC, SyncProfilesPayload::handleOnClient);
         registrar.playToServer(CrafterClickPayload.TYPE, CrafterClickPayload.STREAM_CODEC, CrafterClickPayload::handleOnServer);
+        registrar.playToServer(EditProfilePayload.TYPE, EditProfilePayload.STREAM_CODEC, EditProfilePayload::handleOnServer);
     }
 }

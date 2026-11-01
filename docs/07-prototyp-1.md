@@ -1,38 +1,38 @@
-# Prototyp 1: große Crafter-Anlagen im Stock-Keeper-Ablauf
+# Bedienung, Test im Spiel und Grenzen (Version 0.1.0)
 
-![Stock Keeper mit Anlagen-Auswahl](img/stock-keeper-selector.png)
+| Stock Keeper mit Auswahl | Profilverwaltung |
+|---|---|
+| ![Auswahlliste am Stock Keeper](img/stock-keeper-dropdown.png) | ![Fenster „Crafter-Profile“](img/profile-manager.png) |
 
-*Screenshot aus dem automatischen Client-Test: links neben dem Stock-Keeper-Fenster sitzt der Auswahl-Button („Anlage 1 · Auto“). Bei dieser kleinen Testauflösung wird der Text gekürzt.*
+*Screenshots aus dem automatischen Client-Test (kleine Auflösung 854×480).*
 
-## Was Prototyp 1 kann
+## Was die Mod kann
 
-1. **Anlage registrieren:** Strg halten und einen Mechanical Crafter rechtsklicken. Die ganze verbundene Crafter-Gruppe wird als Bereich gespeichert. Ohne aktives Profil entsteht ein neues Profil („Anlage 1“), sonst wird der Bereich zum zuletzt bearbeiteten Profil hinzugefügt. So kommen z. B. die 21er-Anlage und danach ein 3×3-Feld in dasselbe Profil.
+1. **Anlage registrieren:** Strg halten und einen Mechanical Crafter rechtsklicken. Die ganze verbundene Crafter-Gruppe wird als Bereich gespeichert.
+   - Ohne aktives Profil entsteht ein neues Profil („Anlage 1“), sonst kommt der Bereich zum zuletzt bearbeiteten Profil. So landen z. B. die 21er-Anlage und danach ein 3×3-Feld im selben Profil.
    - Strg + Shift + Rechtsklick auf einen registrierten Bereich entfernt ihn. Auf einer neuen Gruppe startet es ein neues Profil.
    - Die Taste ist unter *Steuerung → Big Create Auto Crafter* umbelegbar. Strg ist auch die Sprint-Taste.
-2. **Adresse pro Bereich:** `/bcac address <Profil> <Bereich> <Adresse>` setzt die Paketadresse der Crafter-Gruppe. Wird der Bereich benutzt, trägt die Mod sie automatisch in das Adressfeld des Stock Keepers ein.
-   - Weitere Befehle: `/bcac list`, `/bcac select <Profil>`, `/bcac rename <Profil> <Name>`, `/bcac delete <Profil>`.
-3. **Auswahl im Stock Keeper:** Der Button neben dem Fenster wechselt per Klick vorwärts, per Rechtsklick rückwärts:
+2. **Auswahl im Stock Keeper:** Links neben dem Fenster sitzt ein Button. Ein Klick öffnet eine Liste mit allen Möglichkeiten in voller Länge:
    - **Standard (Create 3×3):** Creates Verhalten, unverändert.
-   - **Profil · Auto:** Der kleinste Bereich, in den das Rezept passt.
-   - **Profil · Bereich:** Genau dieser Bereich.
-4. **JEI „+“:** Mit gewähltem Profil funktioniert das „+“ auch für Rezepte mit mehr als 9 Zutaten (z. B. Crushing Wheel, 21 Zutaten). Kleine Rezepte gehen in kleine Bereiche oder in die erste passende Stelle eines großen Bereichs.
-5. **Pakete:** Beim Senden erzeugt die Mod ein Muster pro Crafter des Bereichs. Der Repackager packt große Muster nach Itemtyp, also bis zu 64 gleiche Items pro Paket-Slot, damit ein Craft in **ein** Paket passt. Creates Crafter-Entpacker verteilt die Items dann auf die richtigen Crafter.
-
-## Änderungen
-
-- **0.0.3:** Code-Qualität, keine neuen Funktionen.
-  - Die Bereichs-Platzierung hängt direkt am Bestelleintrag. Die globale Merkliste und ihre Aufräumstellen sind weg.
-  - Der Repackager-Mixin greift nur noch an der einen Stelle ein, an der Create das abgeschnittene Paket hinzufügt. Creates Zählung bleibt dabei unangetastet.
-  - Strg + Rechtsklick braucht kein eigenes Tasten-Paket mehr: Der Server unterdrückt genau den einen Klick, für den ein Profil-Klick kam.
-  - Der Auswahl-Button baut Text und Tooltip nur bei Änderungen neu und nutzt Creates eigene JEI-Sperrzonen.
-  - Die tote Einstellung `autoSelectSmallestRegion` ist entfernt (sie hatte nie eine Wirkung).
-  - Client und Server brauchen dieselbe Version (Netzwerkprotokoll 3).
-- **0.0.2:** Fehler aus dem ersten Spieltest behoben. Beim Senden wurde die Bestellliste beim Bauen des Musters heruntergezählt. Create fand danach „0 Crafts“ und schickte den Auftrag **ohne** Crafting-Informationen. Die Crafter wurden dann einfach der Reihe nach gefüllt: erst alles Andesit, dann Holz, dann Stein, und die Tür kam kaputt an. Neuer GameTest `orderKeepsCraftingEntry` spielt Creates Zählschleife nach und hätte den Fehler gefunden.
-- **0.0.1:** erster Prototyp.
+   - **Anlage · Auto:** Der kleinste Bereich, in den das Rezept passt.
+   - **↳ Bereich:** Genau dieser Bereich.
+   - **Profile verwalten…:** Öffnet das Fenster „Crafter-Profile“.
+3. **Fenster „Crafter-Profile“:** Es öffnet sich aus der Liste oder über die Taste *Crafter-Profile öffnen*. Die ist standardmäßig nicht belegt und unter Steuerung einstellbar.
+   - **Umbenennen:** Namen ins Feld schreiben, dann Enter drücken oder ins nächste Feld klicken.
+   - **Paketadresse pro Bereich:** Das Feld neben dem Bereich. Wird der Bereich benutzt, trägt die Mod die Adresse automatisch in den Stock Keeper ein.
+   - **Löschen / Entfernen:** Zweimal klicken („Sicher?“). Wird der letzte Bereich eines Profils entfernt, verschwindet das Profil.
+   - **Fertig** führt zurück zum Stock Keeper.
+   - Dieselben Aktionen gibt es auch als Befehl: `/bcac list | select | rename | address | delete`.
+4. **JEI „+“:** Mit gewählter Anlage funktioniert das „+“ auch für Rezepte mit mehr als 9 Zutaten (z. B. Crushing Wheel, 21 Zutaten). Kleine Rezepte gehen in kleine Bereiche oder an die erste passende Stelle eines großen Bereichs.
+5. **Factory Gauge (automatisches Crafting):** Eine Gauge, deren Adresse die Paketadresse eines deiner Bereiche ist, craftet für diesen Bereich.
+   - Im Gauge-Fenster wird dann auch ein Mechanical-Crafting-Rezept wie das Crushing Wheel angeboten, wenn es in einen deiner Bereiche passt.
+   - Beim Bestätigen bekommt die Gauge das Muster und die Mengen pro Eingang für genau diesen Bereich, beim Crushing Wheel also 16 Andesit, 4 Bretter und 1 Stein.
+   - Gauges mit anderen Adressen bleiben bei Creates 3×3.
+6. **Pakete:** Für große Muster packt der Repackager nach Itemtyp, bis zu 64 gleiche Items pro Paket-Slot, damit ein Craft in **ein** Paket passt. Creates Crafter-Entpacker verteilt die Items dann auf die richtigen Crafter.
 
 ## Wann ein Repackager nötig ist (wie bei Create selbst)
 
-Create legt die Crafting-Informationen nur an die Pakete **eines** Packagers, und sein Crafter-Entpacker nimmt nur Pakete an, deren Items genau in die freien Felder passen. Das gilt für 3×3 genauso wie für große Bereiche:
+Create legt die Crafting-Informationen nur an die Pakete **eines** Packagers. Sein Crafter-Entpacker nimmt nur Pakete an, deren Items genau in die freien Felder passen. Das gilt für 3×3 genauso wie für große Bereiche:
 
 | Situation | ohne Repackager | mit Repackager |
 |---|---|---|
@@ -40,34 +40,44 @@ Create legt die Crafting-Informationen nur an die Pakete **eines** Packagers, un
 | 1 Craft, Zutaten aus **mehreren** Packagern (z. B. ein Vault pro Item) | ❌ Pakete ohne Info werden der Reihe nach eingefüllt | ✅ |
 | **mehrere** Crafts in einem Auftrag | ❌ das Paket enthält Items für mehrere Crafts und wird abgelehnt | ✅ ein Paket pro Craft |
 
-## Wie bisher nötig (Create-Aufbau)
-
-Ein großer Bereich braucht dasselbe wie dein bisheriger 3×3-Ablauf:
-
-- Stock Ticker mit Händler
-- Packager an den Lagern
-- Repackager vor der Anlage
-- Packager direkt an einem Crafter der Gruppe, mit der Adresse des Bereichs
-
-Die Mod ändert keine Blöcke, nur Muster und Paketierung.
+Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager genügt es dort also, wenn alle Zutaten aus einem Packager kommen.
 
 ## So testest du im Spiel
 
-1. Baue mit `./gradlew build` die Datei `build/libs/bigcreateautocrafter-0.0.3.jar` und lege sie auf Client **und** Server in den `mods`-Ordner (alte JAR entfernen).
-2. Baue die 21er-Anlage (5×5 ohne Ecken, wie für das Crushing Wheel), verbinde sie mit dem Schraubenschlüssel und schließe sie wie deine 3×3-Anlage an.
-3. Halte Strg und rechtsklicke einen Crafter. Im Chat erscheint „Profil „Anlage 1“ mit Bereich 5×5 (21) angelegt“.
-4. Setze die Adresse mit `/bcac address 1 1 <deine Adresse>`.
-5. Öffne den Stock Keeper und stelle den Button links auf „Anlage 1 · Auto“.
-6. Suche das Crushing Wheel, öffne das Rezept mit JEI und klicke auf „+“ (ohne Shift, also **1** Craft). Sende dann den Auftrag.
-7. **Erwartet:** Ein Paket pro Craft kommt an der Anlage an, alle 21 Crafter werden gefüllt und das Crushing Wheel wird gecraftet.
-8. Gegenprobe: Mit „Standard“ läuft alles wie vorher, und das „+“ beim Crushing Wheel ist gesperrt.
+1. Lege `bigcreateautocrafter-0.1.0.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide brauchen dieselbe Version (Netzwerkprotokoll 4).
+2. Halte Strg und rechtsklicke die 21er-Anlage. Im Chat erscheint die Bestätigung.
+3. **Stock Keeper:**
+   1. Öffne den Stock Keeper, klicke den Button links und wähle **Profile verwalten…**.
+   2. Benenne das Profil um, trage die Paketadresse des Bereichs ein und klicke **Fertig**.
+   3. Wähle in der Liste die Anlage.
+   4. Bestelle das Crushing Wheel per JEI „+“ und sende den Auftrag.
+4. **Factory Gauge:**
+   1. Baue die Gauge wie bei Create: eine Gauge mit Crushing Wheel als Ziel, verbunden mit Eingangs-Gauges für Andesit, Bretter und Stein.
+   2. Trage im Gauge-Fenster die Paketadresse des 21er-Bereichs ein.
+   3. Schalte das Rezept ein und bestätige.
+   4. **Erwartet:** Die Gauge fordert 16 / 4 / 1 an, und die Anlage craftet das Crushing Wheel.
+5. **Verwalten:** Lösche ein Test-Profil im Fenster mit zwei Klicks auf „Löschen“.
 
-## Bekannte Grenzen von Prototyp 1
+## Änderungen
 
-- **Echtes Craften ist ungetestet.** Geprüft sind die Serverlogik (GameTests: Scan, Platzierung, Paketierung, Entpacken in die richtigen Crafter) und der Client mit echtem Create-Screen und JEI (Smoke-Test). Nicht getestet ist der volle Ablauf mit Rotation, Packagern und Paketwegen.
-- **Höchstens 9 verschiedene Itemtypen pro Auftrag** (Create-Limit L3, unverändert).
-- **Unstapelbare Zutaten** (z. B. Eimer) können einen Craft auf mehrere Pakete verteilen. Die Mod startet den Crafter erst, wenn alles da ist. Kommen Pakete aber in falscher Reihenfolge über mehrere Crafts hinweg an, kann der Packager blockieren (R14).
-- **Die Adresse kommt nicht automatisch.** Sie wird pro Bereich per Befehl gesetzt.
-- **Kein eigener Server-Check des Musters.** Create vertraut dem Muster vom Client bereits heute, das bleibt so (R6).
-- **Der Tooltip des Buttons** ist im automatischen Test nicht sichtbar geprüft. Bitte im Spiel ansehen.
+- **0.1.0:** Neue Bedienung und Factory Gauge.
+  - Aufklappliste statt des abgeschnittenen Wechsel-Buttons.
+  - Fenster „Crafter-Profile“ zum Umbenennen und Löschen, für Adressen und zum Entfernen von Bereichen. Dazu eine Taste zum Öffnen.
+  - Factory Gauges auf Crafter-Bereichen inklusive Mechanical-Crafting-Rezepten.
+- **0.0.3:** Code-Qualität, keine neuen Funktionen.
+  - Die Platzierung hängt am Bestelleintrag.
+  - Der Repackager-Mixin greift nur beim `packages.add` ein.
+  - Ein Netzwerkpaket weniger bei Strg + Rechtsklick.
+  - Die tote Einstellung `autoSelectSmallestRegion` ist entfernt.
+- **0.0.2:** Fehler aus dem ersten Spieltest behoben. Der Muster-Bau zählte die Bestellliste herunter, und Create schickte den Auftrag deshalb ohne Crafting-Informationen. Die Crafter wurden dann der Reihe nach gefüllt.
+- **0.0.1:** erster Prototyp.
+
+## Grenzen
+
+- **Echtes Craften mit Factory Gauges ist ungetestet.**
+  - Geprüft sind die Server-Logik (20 GameTests, darunter Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Liste, Profilfenster, Umbenennen über den Server).
+  - Nicht getestet ist der volle Ablauf einer Gauge mit Paketwegen. Den Stock-Keeper-Weg hast du mit 0.0.2 im Spiel bestätigt.
+- **Gauge und Bereich müssen demselben Spieler gehören.** Der Client kennt nur die eigenen Profile.
+- **Höchstens 9 verschiedene Itemtypen pro Auftrag** (Create-Limit, unverändert).
+- **Unstapelbare Zutaten** (z. B. Eimer) können einen Craft auf mehrere Pakete verteilen. Kommen die Pakete über mehrere Crafts hinweg durcheinander an, kann der Packager blockieren (R14).
 - **JEI-Version des Packs** ist weiter unbestätigt. Die Mod nutzt die Transfer-API, die in allen JEI-19.x-Versionen existiert.

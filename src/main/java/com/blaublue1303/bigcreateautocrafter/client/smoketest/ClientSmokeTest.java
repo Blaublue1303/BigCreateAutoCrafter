@@ -11,11 +11,14 @@ import java.util.UUID;
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.blaublue1303.bigcreateautocrafter.client.ClientProfileCache;
 import com.blaublue1303.bigcreateautocrafter.client.ClientSelection;
+import com.blaublue1303.bigcreateautocrafter.client.ProfileManagerScreen;
+import com.blaublue1303.bigcreateautocrafter.client.ProfileSelector;
 import com.blaublue1303.bigcreateautocrafter.compat.jei.JeiSmokeCheck;
 import com.blaublue1303.bigcreateautocrafter.profile.ProfileService;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.crafter.ConnectedInputHandler;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelScreen;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestMenu;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
 import com.simibubi.create.content.logistics.stockTicker.StockTickerInteractionHandler;
@@ -53,7 +56,7 @@ public final class ClientSmokeTest {
     public static final String PROPERTY = "bigcreateautocrafter.clientSmokeTest";
     private static final int TIMEOUT_TICKS = 20 * 60;
 
-    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, DONE }
+    private enum Phase { WAIT_TITLE, LOADING_WORLD, OPEN_SCREEN, WAIT_SCREEN, SETTLE, DROPDOWN, MANAGER, RENAMED, DONE }
 
     private static Phase phase = Phase.WAIT_TITLE;
     private static int ticks;
@@ -117,7 +120,7 @@ public final class ClientSmokeTest {
                     if (mc.screen instanceof StockKeeperRequestScreen && !ClientProfileCache.all().isEmpty()) {
                         RESULTS.add("PASS Stock Keeper screen opened, " + ClientProfileCache.all().size() + " profile(s) synced: "
                                 + ClientProfileCache.all().get(0).name() + " " + ClientProfileCache.all().get(0).regions().get(0).name());
-                        ClientSelection.cycle(mc.level.dimension(), 1);
+                        ClientSelection.select(ClientSelection.options(mc.level.dimension()).get(1));
                         RESULTS.add("PASS selector shows: " + ClientSelection.current(mc.level.dimension()).label().getString());
                         next(Phase.SETTLE);
                     }
@@ -127,8 +130,38 @@ public final class ClientSmokeTest {
                         if (ModList.get().isLoaded("jei") && mc.player.containerMenu instanceof StockKeeperRequestMenu menu) {
                             RESULTS.addAll(JeiSmokeCheck.check(menu));
                         }
-                        Screenshot.grab(mc.gameDirectory, "bcac-smoke-stockkeeper.png", mc.getMainRenderTarget(), message -> {});
-                        RESULTS.add("PASS screenshot screenshots/bcac-smoke-stockkeeper.png");
+                        screenshot(mc, "bcac-smoke-stockkeeper.png");
+                        if (mc.screen instanceof StockKeeperRequestScreen stockKeeper) {
+                            ProfileSelector.openDropdown(stockKeeper);
+                        }
+                        next(Phase.DROPDOWN);
+                    }
+                }
+                case DROPDOWN -> {
+                    if (ticks == 10) {
+                        screenshot(mc, "bcac-smoke-dropdown.png");
+                        ProfileSelector.openManager(mc.screen);
+                    }
+                    if (ticks > 20 && mc.screen instanceof ProfileManagerScreen manager) {
+                        RESULTS.add((manager.rowCount() == 2 ? "PASS" : "FAIL") + " profile menu shows " + manager.rowCount() + " rows (profile + region)");
+                        manager.renameFirstProfileForTest("Testanlage");
+                        next(Phase.MANAGER);
+                    }
+                }
+                case MANAGER -> {
+                    // the rename goes to the server and comes back with the next profile sync
+                    if (!ClientProfileCache.all().isEmpty() && ClientProfileCache.all().get(0).name().equals("Testanlage")) {
+                        RESULTS.add("PASS rename from the profile menu reached the server and came back");
+                        next(Phase.RENAMED);
+                    }
+                }
+                case RENAMED -> {
+                    if (ticks == 10) {
+                        screenshot(mc, "bcac-smoke-manager.png");
+                        mc.screen.onClose();
+                    }
+                    if (ticks > 20) {
+                        RESULTS.add((mc.screen instanceof StockKeeperRequestScreen ? "PASS" : "FAIL") + " closing the menu returns to the Stock Keeper");
                         next(Phase.DONE);
                     }
                 }
@@ -151,13 +184,15 @@ public final class ClientSmokeTest {
         }
     }
 
-    /** Loading the class applies the client mixin; a broken injection target fails here (defaultRequire = 1). */
+    /** Loading the classes applies the client mixins; a broken injection target fails here (defaultRequire = 1). */
     private static void checkClientMixinTarget() {
-        try {
-            Class.forName(StockKeeperRequestScreen.class.getName(), true, ClientSmokeTest.class.getClassLoader());
-            RESULTS.add("PASS client mixin target StockKeeperRequestScreen loaded");
-        } catch (ClassNotFoundException | LinkageError e) {
-            RESULTS.add("FAIL client mixin: " + e);
+        for (Class<?> target : List.of(StockKeeperRequestScreen.class, FactoryPanelScreen.class)) {
+            try {
+                Class.forName(target.getName(), true, ClientSmokeTest.class.getClassLoader());
+                RESULTS.add("PASS client mixin target " + target.getSimpleName() + " loaded");
+            } catch (ClassNotFoundException | LinkageError e) {
+                RESULTS.add("FAIL client mixin " + target.getSimpleName() + ": " + e);
+            }
         }
     }
 
@@ -210,6 +245,11 @@ public final class ClientSmokeTest {
             boolean opened = StockTickerInteractionHandler.interactWithLogisticsManagerAt(player, player.serverLevel(), tickerPos);
             BigCreateAutoCrafter.LOGGER.info("[smoke] open Stock Keeper at {}: {}", tickerPos, opened);
         });
+    }
+
+    private static void screenshot(Minecraft mc, String name) {
+        Screenshot.grab(mc.gameDirectory, name, mc.getMainRenderTarget(), message -> {});
+        RESULTS.add("PASS screenshot screenshots/" + name);
     }
 
     private static void next(Phase newPhase) {

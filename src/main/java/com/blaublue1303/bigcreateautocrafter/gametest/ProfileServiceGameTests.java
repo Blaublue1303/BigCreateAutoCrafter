@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.blaublue1303.bigcreateautocrafter.compat.create.ConnectedCrafterGroup;
+import com.blaublue1303.bigcreateautocrafter.net.EditProfilePayload;
 import com.blaublue1303.bigcreateautocrafter.profile.CrafterProfile;
 import com.blaublue1303.bigcreateautocrafter.profile.ProfileManager;
 import com.blaublue1303.bigcreateautocrafter.profile.ProfileService;
@@ -64,6 +65,39 @@ public class ProfileServiceGameTests {
             helper.assertTrue(manager.byOwner(player.getUUID()).get(0).regions().size() == 1, "Clicks out of reach must be ignored");
         } finally {
             manager.byOwner(player.getUUID()).forEach(p -> manager.remove(p.id()));
+        }
+        helper.succeed();
+    }
+
+    /** Edits from the profile menu (EditProfilePayload) as the server handles them, including the ownership check. */
+    @GameTest(template = TestCrafters.ARENA)
+    public static void menuEditsProfiles(GameTestHelper helper) {
+        ConnectedCrafterGroup big = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(ProfileCodecGameTests.LAYOUT_21, 3));
+        ConnectedCrafterGroup small = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(ProfileCodecGameTests.LAYOUT_3X3, 5));
+        ServerPlayer owner = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "bcac-owner"));
+        ServerPlayer stranger = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "bcac-stranger"));
+        owner.moveTo(Vec3.atCenterOf(helper.absolutePos(new BlockPos(3, 3, 1))));
+        ProfileManager manager = ProfileManager.get(owner.server);
+        try {
+            ProfileService.handleCrafterClick(owner, big.controller(), false);
+            ProfileService.handleCrafterClick(owner, small.controller(), false);
+            UUID id = manager.byOwner(owner.getUUID()).get(0).id();
+
+            ProfileService.handleEdit(owner, new EditProfilePayload(id, EditProfilePayload.Action.RENAME, -1, "  Hauptanlage  "));
+            ProfileService.handleEdit(owner, new EditProfilePayload(id, EditProfilePayload.Action.SET_ADDRESS, 0, "crafter_gross"));
+            ProfileService.handleEdit(owner, new EditProfilePayload(id, EditProfilePayload.Action.RENAME, -1, "   "));
+            ProfileService.handleEdit(stranger, new EditProfilePayload(id, EditProfilePayload.Action.RENAME, -1, "Fremd"));
+            ProfileService.handleEdit(stranger, new EditProfilePayload(id, EditProfilePayload.Action.DELETE, -1, ""));
+            CrafterProfile profile = manager.byId(id).orElseThrow();
+            helper.assertTrue(profile.name().equals("Hauptanlage"), "Rename failed or was overwritten: " + profile.name());
+            helper.assertTrue(profile.regions().get(0).address().equals("crafter_gross"), "Address not set: " + profile.regions().get(0));
+
+            ProfileService.handleEdit(owner, new EditProfilePayload(id, EditProfilePayload.Action.REMOVE_REGION, 1, ""));
+            helper.assertTrue(manager.byId(id).orElseThrow().regions().size() == 1, "Region not removed");
+            ProfileService.handleEdit(owner, new EditProfilePayload(id, EditProfilePayload.Action.DELETE, -1, ""));
+            helper.assertTrue(manager.byId(id).isEmpty(), "Profile not deleted");
+        } finally {
+            manager.byOwner(owner.getUUID()).forEach(p -> manager.remove(p.id()));
         }
         helper.succeed();
     }

@@ -9,6 +9,7 @@
     "PackageRepackageHelperMixin"
   ],
   "client": [
+    "client.FactoryPanelScreenMixin",
     "client.StockKeeperRequestScreenMixin"
   ],
   "injectors": {

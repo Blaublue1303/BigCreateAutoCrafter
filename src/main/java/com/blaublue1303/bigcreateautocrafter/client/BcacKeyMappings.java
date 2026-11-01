@@ -6,6 +6,8 @@ import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 
@@ -24,10 +26,27 @@ public final class BcacKeyMappings {
             GLFW.GLFW_KEY_LEFT_CONTROL,
             CATEGORY);
 
+    /** Opens the "Crafter profiles" menu from anywhere in game; unbound by default. */
+    public static final KeyMapping OPEN_MANAGER = new KeyMapping(
+            "key." + BigCreateAutoCrafter.MODID + ".open_manager",
+            KeyConflictContext.IN_GAME,
+            InputConstants.UNKNOWN,
+            CATEGORY);
+
     private BcacKeyMappings() {
     }
 
     static void register(RegisterKeyMappingsEvent event) {
         event.register(PROFILE_MODIFIER);
+        event.register(OPEN_MANAGER);
+    }
+
+    static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        while (OPEN_MANAGER.consumeClick()) {
+            if (mc.screen == null && mc.player != null) {
+                mc.setScreen(new ProfileManagerScreen(null));
+            }
+        }
     }
 }

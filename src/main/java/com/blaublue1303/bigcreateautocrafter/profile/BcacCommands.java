@@ -84,51 +84,31 @@ public final class BcacCommands {
 
     private static int rename(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
-        Optional<CrafterProfile> profile = profile(ctx, player);
-        if (profile.isEmpty()) {
-            return 0;
-        }
-        String name = StringArgumentType.getString(ctx, "name").trim();
-        CrafterProfile renamed = profile.get().withName(name);
-        if (CrafterProfile.validate(renamed).error().isPresent()) {
-            ctx.getSource().sendFailure(Component.translatable(MSG + "bad_name", CrafterProfile.MAX_NAME_LENGTH));
-            return 0;
-        }
-        ProfileService.save(player, renamed);
-        ctx.getSource().sendSuccess(() -> Component.translatable(MSG + "renamed", name), false);
-        return 1;
+        return profile(ctx, player)
+                .map(p -> report(ctx, ProfileService.rename(player, p, StringArgumentType.getString(ctx, "name"))))
+                .orElse(0);
     }
 
-    private static int address(CommandContext<CommandSourceStack> ctx, String rawAddress) throws CommandSyntaxException {
+    private static int address(CommandContext<CommandSourceStack> ctx, String address) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
-        Optional<CrafterProfile> profile = profile(ctx, player);
-        if (profile.isEmpty()) {
-            return 0;
-        }
         int regionIndex = IntegerArgumentType.getInteger(ctx, "region") - 1;
-        if (regionIndex >= profile.get().regions().size()) {
-            ctx.getSource().sendFailure(Component.translatable(MSG + "no_such_region", regionIndex + 1));
-            return 0;
-        }
-        CrafterRegion region = profile.get().regions().get(regionIndex).withAddress(rawAddress.trim());
-        if (CrafterRegion.validate(region).error().isPresent()) {
-            ctx.getSource().sendFailure(Component.translatable(MSG + "bad_address", CrafterRegion.MAX_ADDRESS_LENGTH));
-            return 0;
-        }
-        ProfileService.save(player, profile.get().withRegionReplaced(regionIndex, region));
-        ctx.getSource().sendSuccess(() -> Component.translatable(MSG + "address_set", region.name(), region.displayAddress()), false);
-        return 1;
+        return profile(ctx, player)
+                .map(p -> report(ctx, ProfileService.setAddress(player, p, regionIndex, address)))
+                .orElse(0);
     }
 
     private static int delete(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
-        Optional<CrafterProfile> profile = profile(ctx, player);
-        if (profile.isEmpty()) {
-            return 0;
+        return profile(ctx, player).map(p -> report(ctx, ProfileService.deleteProfile(player, p))).orElse(0);
+    }
+
+    private static int report(CommandContext<CommandSourceStack> ctx, Feedback feedback) {
+        if (feedback.success()) {
+            ctx.getSource().sendSuccess(feedback::message, false);
+            return 1;
         }
-        ProfileService.delete(player, profile.get());
-        ctx.getSource().sendSuccess(() -> Component.translatable(MSG + "profile_removed", profile.get().name()), false);
-        return 1;
+        ctx.getSource().sendFailure(feedback.message());
+        return 0;
     }
 
     private static Optional<CrafterProfile> profile(CommandContext<CommandSourceStack> ctx, ServerPlayer player) {

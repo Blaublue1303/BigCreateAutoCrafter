@@ -10,6 +10,7 @@ import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.blaublue1303.bigcreateautocrafter.Config;
 import com.blaublue1303.bigcreateautocrafter.compat.create.ConnectedCrafterGroup;
 import com.blaublue1303.bigcreateautocrafter.compat.create.CreateCompat;
+import com.blaublue1303.bigcreateautocrafter.net.EditProfilePayload;
 import com.mojang.serialization.DataResult;
 
 import net.minecraft.ChatFormatting;
@@ -90,7 +91,7 @@ public final class ProfileService {
                 continue;
             }
             if (secondary) {
-                removeRegion(player, profile, index);
+                tell(player, removeRegion(player, profile, index).message());
             } else {
                 ACTIVE_PROFILE.put(player.getUUID(), profile.id());
                 tell(player, Component.translatable(MSG + "region_exists", profile.regions().get(index).name(), profile.name())
@@ -129,15 +130,59 @@ public final class ProfileService {
         tell(player, Component.translatable(MSG + "address_hint").withStyle(ChatFormatting.GRAY));
     }
 
-    private static void removeRegion(ServerPlayer player, CrafterProfile profile, int index) {
-        if (profile.regions().size() == 1) {
-            delete(player, profile);
-            tell(player, Component.translatable(MSG + "profile_removed", profile.name()).withStyle(ChatFormatting.YELLOW));
-        } else {
-            save(player, profile.withRegionRemoved(index));
-            tell(player, Component.translatable(MSG + "region_removed", profile.regions().get(index).name(), profile.name())
-                    .withStyle(ChatFormatting.YELLOW));
+    // ---- edits, shared by the profile menu (EditProfilePayload) and the /bcac commands ----
+
+    public static void handleEdit(ServerPlayer player, EditProfilePayload edit) {
+        Optional<CrafterProfile> profile = ProfileManager.get(player.server).byId(edit.profileId())
+                .filter(p -> p.owner().equals(player.getUUID()));
+        if (profile.isEmpty()) {
+            return;
         }
+        Feedback feedback = switch (edit.action()) {
+            case RENAME -> rename(player, profile.get(), edit.text());
+            case DELETE -> deleteProfile(player, profile.get());
+            case SET_ADDRESS -> setAddress(player, profile.get(), edit.regionIndex(), edit.text());
+            case REMOVE_REGION -> removeRegion(player, profile.get(), edit.regionIndex());
+        };
+        player.displayClientMessage(feedback.message(), true);
+    }
+
+    public static Feedback rename(ServerPlayer player, CrafterProfile profile, String name) {
+        CrafterProfile renamed = profile.withName(name.trim());
+        if (CrafterProfile.validate(renamed).error().isPresent()) {
+            return Feedback.fail(Component.translatable(MSG + "bad_name", CrafterProfile.MAX_NAME_LENGTH));
+        }
+        save(player, renamed);
+        return Feedback.ok(Component.translatable(MSG + "renamed", renamed.name()));
+    }
+
+    public static Feedback setAddress(ServerPlayer player, CrafterProfile profile, int regionIndex, String address) {
+        if (regionIndex < 0 || regionIndex >= profile.regions().size()) {
+            return Feedback.fail(Component.translatable(MSG + "no_such_region", regionIndex + 1));
+        }
+        CrafterRegion region = profile.regions().get(regionIndex).withAddress(address.trim());
+        if (CrafterRegion.validate(region).error().isPresent()) {
+            return Feedback.fail(Component.translatable(MSG + "bad_address", CrafterRegion.MAX_ADDRESS_LENGTH));
+        }
+        save(player, profile.withRegionReplaced(regionIndex, region));
+        return Feedback.ok(Component.translatable(MSG + "address_set", region.name(), region.displayAddress()));
+    }
+
+    /** Removes a region; removing the last region deletes the profile. */
+    public static Feedback removeRegion(ServerPlayer player, CrafterProfile profile, int index) {
+        if (index < 0 || index >= profile.regions().size()) {
+            return Feedback.fail(Component.translatable(MSG + "no_such_region", index + 1));
+        }
+        if (profile.regions().size() == 1) {
+            return deleteProfile(player, profile);
+        }
+        save(player, profile.withRegionRemoved(index));
+        return Feedback.ok(Component.translatable(MSG + "region_removed", profile.regions().get(index).name(), profile.name()));
+    }
+
+    public static Feedback deleteProfile(ServerPlayer player, CrafterProfile profile) {
+        delete(player, profile);
+        return Feedback.ok(Component.translatable(MSG + "profile_removed", profile.name()));
     }
 
     private static Optional<CrafterProfile> activeProfile(ServerPlayer player) {
