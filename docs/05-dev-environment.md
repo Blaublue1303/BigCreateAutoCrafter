@@ -2,7 +2,7 @@
 
 ## Versionen
 - JDK 21, Gradle Wrapper 9.2.1, ModDevGradle `2.0.148`, NeoForge **21.1.250**, MC 1.21.1, Parchment 2024.11.17.
-- Mod-ID `bigcreateautocrafter`, Gruppe `com.blaublue1303.bigcreateautocrafter`, Version `0.0.1`.
+- Mod-ID `bigcreateautocrafter`, Gruppe `com.blaublue1303.bigcreateautocrafter`, Version siehe `gradle.properties` (`mod_version`).
 
 ## Abhängigkeiten (`build.gradle`, Versionen in `gradle.properties`)
 | Artefakt | Version | Herkunft / Beleg |
@@ -17,12 +17,18 @@ Ponder wird mit `transitive = false` eingebunden, weil seine POM sonst Flywheel 
 `scripts/fetch-dev-jars.sh` wird nur noch zur Analyse (Dekompilieren) gebraucht, nicht für den Build.
 
 ## Befehle
-- `./gradlew build`: kompiliert gegen Create und JEI und baut `build/libs/bigcreateautocrafter-0.1.0.jar`.
+- `./gradlew build`: kompiliert gegen Create und JEI und baut `build/libs/bigcreateautocrafter-<version>.jar`.
 - `./gradlew runGameTestServer`: startet einen headless Server mit Create, Ponder, Flywheel, Registrate, JEI und der Mod, führt alle GameTests aus und beendet sich mit dem Ergebnis als Exit-Code. **Läuft lokal und in der CI.**
-- `xvfb-run ./gradlew runClientSmokeTest` (Linux ohne Display; mit Display reicht `./gradlew runClientSmokeTest`): automatischer Client-Test in eigenem Ordner `run-smoketest/`. Er legt eine Flachwelt an, baut eine 21er-Crafter-Gruppe, legt über dieselbe Serverlogik wie Strg + Rechtsklick ein Profil an und öffnet einen echten Stock-Keeper-Screen. Dann prüft er die JEI-Handler, öffnet Aufklappliste und Profilfenster, benennt ein Profil über den Server um und macht Screenshots. Das Ergebnis steht in `run-smoketest/bcac-smoketest.txt` (`RESULT PASS/FAIL`). Nicht in der CI.
+- `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientSmokeTest` (mit Display reicht `./gradlew runClientSmokeTest`): automatischer Client-Test in eigenem Ordner `run-smoketest/`, Fenster 1600×900.
+  - Er legt eine Flachwelt an, baut eine 21er-Gruppe und ein 3×3-Feld und legt über dieselbe Serverlogik wie Strg + Rechtsklick ein Profil an.
+  - Welt-Aufnahme: Die 21er-Gruppe wird über Creates Entpacker mit den Crushing-Wheel-Zutaten befüllt.
+  - Er öffnet einen echten Stock Keeper, prüft die JEI-Handler, den Anhänger mit Tooltip, das Panel und das Profilfenster (Umbenennen und Adresse über den Server).
+  - Er stellt eine echte Factory Gauge über ihr Fenster ein und prüft auf dem Server Muster und Mengen.
+  - Zum Schluss rendert er die Items fürs Logo.
+  - Ergebnis in `run-smoketest/bcac-smoketest.txt` (`RESULT PASS/FAIL`), Screenshots in `run-smoketest/screenshots/`. Nicht in der CI.
 - `./gradlew runClient` / `runServer`: manuelles Testen. `runServer` verlangt `run/eula.txt`.
 
-## GameTests (`src/main/java/.../gametest`, Arena `data/bigcreateautocrafter/structure/empty7.nbt`), 20 Tests
+## GameTests (`src/main/java/.../gametest`, Arena `data/bigcreateautocrafter/structure/empty7.nbt`), 21 Tests
 | Klasse | prüft |
 |---|---|
 | `CreateCompatGameTests` | Mixin-Accessor, Lesen verbundener Gruppen in Creates Reihenfolge |
@@ -30,7 +36,7 @@ Ponder wird mit `transitive = false` eingebunden, weil seine POM sonst Flywheel 
 | `RegionGameTests` | Scan echter Gruppen (21er, L-Form, beide Achsen), Platzierung inkl. echtem Crushing-Wheel- und Truhen-Rezept |
 | `LogisticsGameTests` | T3 (Netzwerk), Repackager (nach Itemtyp, Aufteilung, 3×3 unverändert), T4 (Entpacken in die richtigen Crafter, Teilpakete), Creates Zählschleife aus `sendIt` mit unserem Muster (Regression 0.0.2) |
 | `ProfileServiceGameTests` | Strg-Rechtsklick-Ablauf: anlegen, hinzufügen, doppelt, entfernen, löschen, Reichweite; Bearbeiten aus dem Profilfenster inkl. Besitzer-Prüfung |
-| `FactoryGameTests` | Factory Gauge: Mechanical-Crafting-Rezept zu den Gauge-Eingängen finden, Muster für einen Bereich (Crushing Wheel, Truhe), Bereich per Adresse |
+| `FactoryGameTests` | Factory Gauge: Mechanical-Crafting-Rezept zu den Gauge-Eingängen finden, Muster für einen Bereich (Crushing Wheel, Truhe), Bereich per Adresse, Bereichswahl ohne passende Adresse |
 
 Die Arena erzeugt `scripts/make-empty-structure.py` (Vanilla-Struktur-NBT, DataVersion 3955).
 GameTests und Smoke-Test liegen im Haupt-Sourceset. Sie laufen nur im GameTest-Modus bzw. mit der Systemeigenschaft `bigcreateautocrafter.clientSmokeTest`, im normalen Spiel nicht.
