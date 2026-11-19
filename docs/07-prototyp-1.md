@@ -1,4 +1,4 @@
-# Bedienung, Test im Spiel und Grenzen (Version 0.1.4)
+# Bedienung, Test im Spiel und Grenzen (Version 0.1.6)
 
 | Anhänger am Stock Keeper | Auswahl „Crafter-Anlage“ | Fenster „Crafter-Profile“ |
 |---|---|---|
@@ -57,7 +57,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## So testest du im Spiel
 
-1. Lege `bigcreateautocrafter-0.1.4.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 4, unverändert seit 0.1.0).
+1. Lege `bigcreateautocrafter-0.1.6.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 5, neu in 0.1.5).
 2. Halte Strg und rechtsklicke die 21er-Anlage. Im Chat erscheint die Bestätigung.
 3. **Stock Keeper:**
    1. Öffne den Stock Keeper, klicke den Anhänger links und wähle **Profile verwalten…**.
@@ -74,6 +74,19 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 
 ## Änderungen
 
+- **0.1.6:** Gespeicherte Bereiche bleiben passend zur echten Anlage (Multiplayer-Fehler „Rezept kommt nach einiger Zeit falsch an“).
+  - **Ursache:** Create lässt in `getInventories` Crafter, die es gerade nicht erreicht (z. B. Teil der Anlage in einem nicht geladenen Chunk), still weg. Dann rutschen alle späteren Zutaten einen Crafter nach vorn. Außerdem war das gespeicherte Raster nur eine Momentaufnahme vom Registrieren.
+  - **Schutz beim Entpacken:** Ist die Crafter-Gruppe nicht vollständig erreichbar, bleibt das Paket im Packager und wird später erneut versucht, statt in verschobene Crafter zu gehen. Im Server-Log steht höchstens einmal pro Minute eine Warnung.
+  - **Selbstheilung:** Alle 5 Sekunden vergleicht der Server die Bereiche der Spieler mit den echten Craftern (nur in geladenen Chunks). Stimmt etwas nicht mehr (Anlage umgebaut, neuer Controller), wird der Bereich korrigiert, gespeichert und synchronisiert. Name und Adresse bleiben. Alte Bereiche ohne Ausgang bekommen ihn so automatisch, neu registrieren ist nicht mehr nötig.
+  - Strg + Rechtsklick auf einen schon registrierten Bereich prüft ihn jetzt auch und meldet „angepasst“, falls sich etwas geändert hat.
+  - Zwei neue GameTests (Bereich heilt, unvollständige Gruppe wird erkannt).
+
+- **0.1.5:** Kleine Rezepte sitzen jetzt am Ausgang der Anlage.
+  - Vorher lag ein kleines Rezept (z. B. 3×3) immer oben links in einer großen Anlage. Die leeren Crafter darunter gehörten zur Gruppe, das Ergebnis sah „eins zu hoch“ aus und musste erst bis zum Ausgang durch.
+  - Beim Registrieren (Strg + Rechtsklick) merkt sich die Mod den **Ausgang**: den Crafter, dessen Pfeil aus der Gruppe herauszeigt. Kleine Rezepte werden an die passende Stelle direkt am Ausgang gelegt. Große Rezepte (z. B. Crushing Wheel) ändern sich nicht.
+  - **Alte Bereiche** (vor 0.1.5 registriert) bekommen ihren Ausgang ab 0.1.6 automatisch (siehe Selbstheilung bei 0.1.6), neu registrieren ist nicht nötig.
+  - Netzwerkprotokoll 5: Client und Server müssen beide 0.1.5 oder neuer haben.
+  - Zwei neue GameTests (Ausgang aus den Pfeilen lesen, Platzierung am Ausgang).
 - **0.1.4:** Lizenz MIT (`LICENSE` im Repository und in der JAR). Keine Änderung am Spiel.
 - **0.1.3:** Für CurseForge vorbereitet.
   - Neue Profile heißen bei englischer Spielsprache „Setup 1“, bei deutscher weiter „Anlage 1“.
@@ -103,7 +116,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 ## Grenzen
 
 - **Echtes Craften mit Factory Gauges ist im Spiel noch nicht bestätigt.**
-  - Geprüft sind die Server-Logik (21 GameTests, darunter Bereichswahl, Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Anhänger, Panel, Profilfenster, echte Factory Gauge bis zum gespeicherten Muster auf dem Server).
+  - Geprüft sind die Server-Logik (25 GameTests, darunter Bereichswahl, Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Anhänger, Panel, Profilfenster, echte Factory Gauge bis zum gespeicherten Muster auf dem Server).
   - Nicht getestet ist das Bestellen und Craften mit echten Paketwegen. Den Stock-Keeper-Weg hast du mit 0.0.2 im Spiel bestätigt, er nutzt dasselbe Muster-Format.
 - **Gauge und Bereich müssen demselben Spieler gehören.** Der Client kennt nur die eigenen Profile.
 - **Höchstens 9 verschiedene Itemtypen pro Auftrag** (Create-Limit, unverändert).

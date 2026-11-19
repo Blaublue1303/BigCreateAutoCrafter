@@ -6,7 +6,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 /** Registers all network payloads of the mod. */
 public final class BcacNetwork {
     /** Bump on any incompatible payload change. */
-    public static final String PROTOCOL_VERSION = "4";
+    public static final String PROTOCOL_VERSION = "5";
 
     private BcacNetwork() {
     }

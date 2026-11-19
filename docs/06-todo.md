@@ -21,6 +21,6 @@ Status: ✅ erledigt · 🟡 teilweise · ⬜ offen
 10. ✅ Auswahl am Stock Keeper als Papier-Anhänger mit Holz-Panel und „Profile verwalten…“ im Stil von Creates Stock Keeper (JEI-Sperrzone, Scrollen zum Wechseln).
 10b. ✅ Factory Gauge auf Crafter-Bereichen (Bereich über die Gauge-Adresse oder automatisch der kleinste passende, Mengen im Gauge-Fenster, Mechanical-Crafting-Rezepte). 🟡 Craften mit Paketwegen im Spiel testen.
 11. 🟡 Config (Server). *Offen:* Datapack-Profile (optional), Client-Config für die Anhänger-Position.
-12. 🟡 Tests: 21 GameTests und ein Client-Smoke-Test (inklusive echter Factory Gauge). *Offen:* echter Crafting-Durchlauf mit Rotation und Paketwegen im Spiel, Test im vollständigen Modpack (Mixin-Konflikte R7).
-13. 🟡 Release: CurseForge-Seite vorbereitet (`curseforge/`: Logo, Beschreibung, Screenshots). Lizenz: MIT (ab 0.1.4). *Offen:* hochladen.
+12. 🟡 Tests: 25 GameTests und ein Client-Smoke-Test (inklusive echter Factory Gauge). *Offen:* echter Crafting-Durchlauf mit Rotation und Paketwegen im Spiel, Test im vollständigen Modpack (Mixin-Konflikte R7).
+13. 🟡 Release: CurseForge-Seite vorbereitet (`curseforge/`: Logo, Beschreibung, Screenshots). Lizenz: MIT (ab 0.1.4). *Offen:* 0.1.6 hochladen (0.1.4 wurde übersprungen).
 14. ⬜ Danach: mehr als 9 Itemtypen pro Auftrag (L3), robuste Reihenfolge bei geteilten Paketen (R14).

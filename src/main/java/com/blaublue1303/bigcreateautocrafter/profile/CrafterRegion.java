@@ -26,8 +26,10 @@ import net.minecraft.network.codec.StreamCodec;
  *                   by row gives exactly Create's crafter inventory order ({@code ConnectedInput.getInventories}), which
  *                   is the order Create's crafter unpacking handler fills recipe pattern slots in.
  * @param address    Create package address of the packager feeding this crafter group; empty = not set
+ * @param exit       index (in Create's inventory order, i.e. among the {@code '#'} cells read row by row) of the crafter
+ *                   where the crafted item leaves the group (end of the arrow chain); {@code -1} = unknown
  */
-public record CrafterRegion(String name, BlockPos controller, Direction facing, List<String> layout, String address) {
+public record CrafterRegion(String name, BlockPos controller, Direction facing, List<String> layout, String address, int exit) {
     public static final int MAX_NAME_LENGTH = 32;
     public static final int MAX_ADDRESS_LENGTH = 64;
     public static final char CRAFTER = '#';
@@ -38,7 +40,8 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
             BlockPos.CODEC.fieldOf("controller").forGetter(CrafterRegion::controller),
             Direction.CODEC.fieldOf("facing").forGetter(CrafterRegion::facing),
             Codec.STRING.listOf().fieldOf("layout").forGetter(CrafterRegion::layout),
-            Codec.STRING.optionalFieldOf("address", "").forGetter(CrafterRegion::address)
+            Codec.STRING.optionalFieldOf("address", "").forGetter(CrafterRegion::address),
+            Codec.INT.optionalFieldOf("exit", -1).forGetter(CrafterRegion::exit)
     ).apply(i, CrafterRegion::new)).validate(CrafterRegion::validate);
 
     public static final StreamCodec<ByteBuf, CrafterRegion> STREAM_CODEC = StreamCodec.composite(
@@ -47,11 +50,33 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
             Direction.STREAM_CODEC, CrafterRegion::facing,
             ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), CrafterRegion::layout,
             ByteBufCodecs.STRING_UTF8, CrafterRegion::address,
+            ByteBufCodecs.VAR_INT, CrafterRegion::exit,
             CrafterRegion::new);
 
     public CrafterRegion {
         controller = controller.immutable();
         layout = List.copyOf(layout);
+    }
+
+    /** Region with an unknown exit (profiles from before 0.1.5, tests). */
+    public CrafterRegion(String name, BlockPos controller, Direction facing, List<String> layout, String address) {
+        this(name, controller, facing, layout, address, -1);
+    }
+
+    /** @return {@code {column, row}} of the exit crafter, or {@code null} if it is not known */
+    public int[] exitCell() {
+        if (exit < 0) {
+            return null;
+        }
+        int index = 0;
+        for (int y = 0; y < height(); y++) {
+            for (int x = 0; x < width(); x++) {
+                if (hasCrafterAt(x, y) && index++ == exit) {
+                    return new int[] {x, y};
+                }
+            }
+        }
+        return null;
     }
 
     public int width() {
@@ -78,7 +103,13 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
     }
 
     public CrafterRegion withAddress(String newAddress) {
-        return new CrafterRegion(name, controller, facing, layout, newAddress);
+        return new CrafterRegion(name, controller, facing, layout, newAddress, exit);
+    }
+
+    /** Same region (name, address) with the shape taken from a fresh scan of the real crafters. */
+    public CrafterRegion withScan(BlockPos newController, Direction newFacing, List<String> newLayout, int newExit) {
+        String newName = name.equals(sizeLabel(layout)) ? sizeLabel(newLayout) : name; // auto names follow the size
+        return new CrafterRegion(newName, newController, newFacing, newLayout, address, newExit);
     }
 
     /** Short label like {@code 5×5 (21)} used for auto-generated names. */
@@ -125,6 +156,9 @@ public record CrafterRegion(String name, BlockPos controller, Direction facing, 
         }
         if (region.crafterCount() == 0) {
             return DataResult.error(() -> "Region layout must contain at least one crafter");
+        }
+        if (region.exit() >= region.crafterCount()) {
+            return DataResult.error(() -> "Region exit " + region.exit() + " is outside the " + region.crafterCount() + " crafters");
         }
         return DataResult.success(region);
     }

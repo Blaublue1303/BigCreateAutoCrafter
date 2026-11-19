@@ -10,6 +10,7 @@ import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.crafter.ConnectedInputHandler;
 import com.simibubi.create.content.kinetics.crafter.CrafterHelper;
+import com.simibubi.create.content.kinetics.crafter.MechanicalCrafterBlock;
 import com.simibubi.create.content.kinetics.crafter.MechanicalCrafterBlockEntity;
 
 import net.minecraft.core.BlockPos;
@@ -76,6 +77,58 @@ public final class CreateCompat {
 
         Direction facing = controller.getBlockState().getValue(HorizontalKineticBlock.HORIZONTAL_FACING);
         return Optional.of(new ConnectedCrafterGroup(controllerPos, facing, List.of(members)));
+    }
+
+    /**
+     * {@code false} if the crafter at {@code pos} belongs to a group of which Create can currently not reach every
+     * member (e.g. one part sits in an unloaded chunk). Create's {@code getInventories} then silently drops the missing
+     * crafters, so every later pattern slot would land one crafter too early.
+     */
+    public static boolean isGroupComplete(Level level, BlockPos pos) {
+        MechanicalCrafterBlockEntity clicked = CrafterHelper.getCrafter(level, pos);
+        if (clicked == null) {
+            return true;
+        }
+        BlockPos controllerPos = controllerOf(clicked);
+        MechanicalCrafterBlockEntity controller = CrafterHelper.getCrafter(level, controllerPos);
+        if (controller == null) {
+            return false;
+        }
+        ConnectedInputHandler.ConnectedInput input = controller.getInput();
+        ConnectedInputAccessor accessor = (ConnectedInputAccessor) input;
+        if (!accessor.bcac$isController()) {
+            return false;
+        }
+        int expected;
+        synchronized (accessor.bcac$getData()) {
+            expected = accessor.bcac$getData().size();
+        }
+        return input.getInventories(level, controllerPos).size() == expected;
+    }
+
+    /**
+     * Index (in the group's member order = Create's inventory order) of the crafter where the crafted item leaves the
+     * group: the one whose target arrow points at something that is not a crafter of the group.
+     *
+     * @return {@code -1} if there is not exactly one such crafter
+     */
+    public static int exitIndex(Level level, ConnectedCrafterGroup group) {
+        int exit = -1;
+        for (int i = 0; i < group.members().size(); i++) {
+            BlockPos member = group.members().get(i);
+            BlockState state = level.getBlockState(member);
+            if (!isMechanicalCrafter(state)) {
+                return -1;
+            }
+            BlockPos target = member.relative(MechanicalCrafterBlock.getTargetDirection(state));
+            if (!group.members().contains(target)) {
+                if (exit >= 0) {
+                    return -1;
+                }
+                exit = i;
+            }
+        }
+        return exit;
     }
 
     private static BlockPos controllerOf(MechanicalCrafterBlockEntity crafter) {

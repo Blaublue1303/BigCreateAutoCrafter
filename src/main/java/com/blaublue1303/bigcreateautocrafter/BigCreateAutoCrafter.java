@@ -26,6 +26,7 @@ public class BigCreateAutoCrafter {
         NeoForge.EVENT_BUS.addListener(ProfileSync::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(ProfileService::onLoggedOut);
         NeoForge.EVENT_BUS.addListener(ProfileService::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(ProfileService::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(BcacCommands::onRegisterCommands);
     }
 }

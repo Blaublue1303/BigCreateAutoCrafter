@@ -22,6 +22,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
  * Server-side profile editing: Ctrl + right-click on a crafter group, and the {@code /bcac} commands.
@@ -34,6 +35,7 @@ public final class ProfileService {
     static final String MSG = "message." + BigCreateAutoCrafter.MODID + ".";
     /** How long a profile click cancels the vanilla use of the clicked block (the use packet follows right after). */
     private static final int SUPPRESS_USE_TICKS = 20;
+    private static final int REFRESH_INTERVAL_TICKS = 100;
 
     private record SuppressedUse(BlockPos pos, long untilGameTime) {
     }
@@ -86,7 +88,8 @@ public final class ProfileService {
         List<CrafterProfile> own = ProfileManager.get(player.server).byOwner(player.getUUID());
 
         for (CrafterProfile profile : own) {
-            int index = profile.dimension().equals(level.dimension()) ? profile.indexOfRegion(controller) : -1;
+            // a region counts as this group if its stored controller is any member (the controller may have moved)
+            int index = profile.dimension().equals(level.dimension()) ? indexOfRegionIn(profile, group.get()) : -1;
             if (index < 0) {
                 continue;
             }
@@ -94,8 +97,11 @@ public final class ProfileService {
                 tell(player, removeRegion(player, profile, index).message());
             } else {
                 ACTIVE_PROFILE.put(player.getUUID(), profile.id());
-                tell(player, Component.translatable(MSG + "region_exists", profile.regions().get(index).name(), profile.name())
-                        .withStyle(ChatFormatting.YELLOW));
+                boolean updated = refresh(player, profile.id()) > 0;
+                CrafterProfile current = ProfileManager.get(player.server).byId(profile.id()).orElse(profile);
+                int now = Math.min(index, current.regions().size() - 1);
+                tell(player, Component.translatable(MSG + (updated ? "region_updated" : "region_exists"), current.regions().get(now).name(), current.name())
+                        .withStyle(updated ? ChatFormatting.GREEN : ChatFormatting.YELLOW));
             }
             return;
         }
@@ -106,7 +112,7 @@ public final class ProfileService {
             return;
         }
         List<String> layout = scanned.getOrThrow();
-        CrafterRegion region = new CrafterRegion(CrafterRegion.sizeLabel(layout), controller, group.get().facing(), layout, "");
+        CrafterRegion region = new CrafterRegion(CrafterRegion.sizeLabel(layout), controller, group.get().facing(), layout, "", CreateCompat.exitIndex(level, group.get()));
 
         Optional<CrafterProfile> active = secondary ? Optional.empty() : activeProfile(player);
         if (active.isPresent()) {
@@ -128,6 +134,56 @@ public final class ProfileService {
             tell(player, Component.translatable(MSG + "profile_created", profile.name(), region.name()).withStyle(ChatFormatting.GREEN));
         }
         tell(player, Component.translatable(MSG + "address_hint").withStyle(ChatFormatting.GRAY));
+    }
+
+    private static int indexOfRegionIn(CrafterProfile profile, ConnectedCrafterGroup group) {
+        for (int i = 0; i < profile.regions().size(); i++) {
+            if (group.members().contains(profile.regions().get(i).controller())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // ---- keeping the stored regions equal to the real crafters ----
+
+    /** Every 5 seconds the owner's regions are compared with the real crafters (only where the chunks are loaded). */
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % REFRESH_INTERVAL_TICKS == 0) {
+            if (refresh(player, null) > 0) {
+                player.displayClientMessage(Component.translatable(MSG + "regions_updated").withStyle(ChatFormatting.GREEN), true);
+            }
+        }
+    }
+
+    /**
+     * Rescans the regions of the player's profiles (or of one profile) and saves the corrected ones.
+     *
+     * @return number of regions that changed
+     */
+    public static int refresh(ServerPlayer player, UUID onlyProfile) {
+        ProfileManager manager = ProfileManager.get(player.server);
+        int changed = 0;
+        for (CrafterProfile profile : manager.byOwner(player.getUUID())) {
+            ServerLevel level = player.server.getLevel(profile.dimension());
+            if (level == null || onlyProfile != null && !onlyProfile.equals(profile.id())) {
+                continue;
+            }
+            CrafterProfile current = profile;
+            for (int i = 0; i < current.regions().size(); i++) {
+                RegionRefresh.Result result = RegionRefresh.check(level, current.regions().get(i));
+                if (result.state() == RegionRefresh.State.UPDATED) {
+                    BigCreateAutoCrafter.LOGGER.info("Region '{}' of profile '{}' changed in the world, stored shape updated: {} -> {}",
+                            current.regions().get(i).name(), current.name(), current.regions().get(i).layout(), result.region().layout());
+                    current = current.withRegionReplaced(i, result.region());
+                    changed++;
+                }
+            }
+            if (current != profile) {
+                save(player, current);
+            }
+        }
+        return changed;
     }
 
     // ---- edits, shared by the profile menu (EditProfilePayload) and the /bcac commands ----

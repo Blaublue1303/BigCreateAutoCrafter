@@ -12,6 +12,8 @@
   "message.bigcreateautocrafter.region_invalid": "Diese Crafter-Gruppe kann nicht verwendet werden: %s",
   "message.bigcreateautocrafter.profile_created": "Profil „%s“ mit Bereich %s angelegt.",
   "message.bigcreateautocrafter.region_added": "Bereich %s zu Profil „%s“ hinzugefügt.",
+  "message.bigcreateautocrafter.region_updated": "Bereich %s von Profil „%s“ wurde an die echte Anlage angepasst.",
+  "message.bigcreateautocrafter.regions_updated": "Die gespeicherten Bereiche wurden an die echten Crafter angepasst.",
   "message.bigcreateautocrafter.region_exists": "Diese Gruppe ist bereits Bereich %s von Profil „%s“ (Strg + Shift + Rechtsklick entfernt ihn).",
   "message.bigcreateautocrafter.region_removed": "Bereich %s aus Profil „%s“ entfernt.",
   "message.bigcreateautocrafter.profile_removed": "Profil „%s“ gelöscht.",

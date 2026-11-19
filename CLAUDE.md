@@ -1,6 +1,6 @@
 # Kontext für neue Sessions – Big Create Auto Crafter
 
-Stand: 2026-11-04, Version **0.1.4** (`gradle.properties` → `mod_version`). Diese Datei fasst alles zusammen, was eine neue Session wissen muss. Ausführliche Doku in `docs/01…07`, CurseForge-Material in `curseforge/`.
+Stand: 2026-11-04, Version **0.1.6** (`gradle.properties` → `mod_version`). Diese Datei fasst alles zusammen, was eine neue Session wissen muss. Ausführliche Doku in `docs/01…07`, CurseForge-Material in `curseforge/`.
 
 ## 1. Worum es geht
 
@@ -49,7 +49,7 @@ Stand: 2026-11-04, Version **0.1.4** (`gradle.properties` → `mod_version`). Di
    - Factory Gauge mit Crushing Wheel ab 0.1.2.
    - Erwartet: Gauge-Fenster zeigt 16/4/1, Meldung über der Hotbar „Gauge craftet auf Bereich 5×5 (21) …“, die Anlage craftet.
    - Alte Gauges einmal öffnen und bestätigen.
-2. **CurseForge:** 0.1.4 hochladen. Bei Ablehnung des Logos `logo.png` nehmen.
+2. **CurseForge:** 0.1.6 hochladen (enthält die Lizenz-Metadaten von 0.1.4). Bei Ablehnung des Logos `logo.png` nehmen.
 3. **Aus `docs/06-todo.md`:**
    - R6: eigene Servervalidierung der Muster
    - L3: mehr als 9 Itemtypen pro Auftrag
@@ -58,6 +58,10 @@ Stand: 2026-11-04, Version **0.1.4** (`gradle.properties` → `mod_version`). Di
    - Datapack-Profile
    - Client-Config für die Anhänger-Position
    - Test im vollständigen Modpack (Mixin-Konflikte R7)
+3b. **Multiplayer-Fehler (vom Nutzer gemeldet, Stand 2026-11-04), behoben in 0.1.6, vom Nutzer noch nicht bestätigt:** Auf dem Server (Crafty „Server 2.1“, NeoForge 21.1.250, Create 6.0.10, JEI 19.54.0.429, dazu Sable und Create Aeronautics) kam das Rezept nach einiger Zeit falsch an.
+   - **Ursache (belegt per `javap`):** Creates `CrafterUnpackingHandler.unpack` nimmt `Math.min(getInventories.size(), pattern.size())`. `getInventories` wirft nicht erreichbare Crafter (`filter(nonNull)`, z. B. nicht geladener Chunk) still weg, danach rutschen alle Plätze um eins.
+   - **Fix:** `CrafterUnpackingHandlerMixin` (HEAD von `unpack`) lehnt das Entpacken ab, solange `CreateCompat.isGroupComplete` false ist. `RegionRefresh` plus `ProfileService.onPlayerTick` (alle 100 Ticks) gleichen gespeicherte Bereiche mit den echten Craftern ab und speichern korrigierte; Strg + Rechtsklick auf einen vorhandenen Bereich tut dasselbe.
+   - Falls der Fehler weiter auftritt: Server-Log nach „not fully loaded“ und „stored shape updated“ durchsuchen. Die Profildatei `world/data/bigcreateautocrafter_profiles.dat` ist gzip-NBT und über die Crafty-API nicht lesbar.
 4. **Unbestätigt:** JEI-Version des Packs (CurseForge-fileID 8857687). Wir bauen gegen JEI 19.70.0.468 und nutzen nur Transfer-API, die es in allen 19.x gibt.
 5. **Optional:** englische README für Besucher von CurseForge (README und Doku sind deutsch).
 
@@ -76,14 +80,14 @@ Stand: 2026-11-04, Version **0.1.4** (`gradle.properties` → `mod_version`). Di
 | MixinExtras | 0.5.3 (`@WrapOperation`, `@Local`) |
 
 - Mod-ID `bigcreateautocrafter`, Paket `com.blaublue1303.bigcreateautocrafter`.
-- Netzwerkprotokoll `"4"` (`net/BcacNetwork.java`). Bei Änderungen an Payloads erhöhen.
+- Netzwerkprotokoll `"5"` (`net/BcacNetwork.java`). Bei Änderungen an Payloads erhöhen.
 - Server-Config (`Config.java`): maxRegionWidth/Height 9, maxRegionsPerProfile 8, maxProfilesPerPlayer 16.
 - `scripts/fetch-dev-jars.sh` lädt Create- und JEI-JARs nach `libs/` (gitignored) zum Dekompilieren (z. B. mit Vineflower). Für den Build wird das nicht gebraucht.
 
 ## 6. Befehle und Tests
 
 - `./gradlew build`: JAR in `build/libs/bigcreateautocrafter-<version>.jar`.
-- `./gradlew runGameTestServer`: **21 GameTests**, headless. Laufen auch in der CI (`.github/workflows/build.yml`: build + GameTests bei jedem Push/PR).
+- `./gradlew runGameTestServer`: **25 GameTests**, headless. Laufen auch in der CI (`.github/workflows/build.yml`: build + GameTests bei jedem Push/PR).
 - Client-Smoke-Test (lokal, nicht in CI, ca. 4 Minuten):
   `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientSmokeTest`
   - Fenster 1600×900, GUI-Skalierung 3. Ergebnis in `run-smoketest/bcac-smoketest.txt` (`RESULT PASS`), Screenshots in `run-smoketest/screenshots/`.
@@ -134,6 +138,7 @@ Stand: 2026-11-04, Version **0.1.4** (`gradle.properties` → `mod_version`). Di
 - **WrapOperation auf den ersten `renderComponentTooltip` in `renderInputItem`:** Tooltip mit Bereich.
 - **TAIL von `init`:** Bereich im Button-Tooltip. Ein leeres Adressfeld wird mit der Bereichsadresse gefüllt.
 - **ModifyArg am Konstruktor von `FactoryPanelConfigurationPacket` in `sendIt`:** Index 2 = Mengen pro Eingang, Index 3 = Muster. Beim Speichern erscheint eine Meldung über der Hotbar.
+- **Platzierung (`RegionPlacer.fit`, ab 0.1.5):** Kleine Rezepte liegen am **Ausgang** der Anlage. `CrafterRegion.exit` ist der Index (Creates Inventar-Reihenfolge) des Crafters, dessen Zielpfeil aus der Gruppe zeigt (`CreateCompat.exitIndex`, beim Strg-Klick ermittelt). `-1` = unbekannt (alte Profile): dann wie früher die erste passende Stelle oben links.
 - **Bereichswahl (`FactoryArrangements.target`):**
   1. Der Bereich, dessen Paketadresse in der Gauge steht.
   2. Sonst, nur bei Rezepten größer als 3×3: der kleinste passende Bereich des Spielers. Die Gauge-Adresse bestimmt dann nur das Ziel der Pakete.

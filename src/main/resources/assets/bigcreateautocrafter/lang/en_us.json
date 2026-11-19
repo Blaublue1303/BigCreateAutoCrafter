@@ -12,6 +12,8 @@
   "message.bigcreateautocrafter.region_invalid": "This crafter group cannot be used: %s",
   "message.bigcreateautocrafter.profile_created": "Created profile \"%s\" with region %s.",
   "message.bigcreateautocrafter.region_added": "Added region %s to profile \"%s\".",
+  "message.bigcreateautocrafter.region_updated": "Region %s of profile \"%s\" was updated to match the real crafters.",
+  "message.bigcreateautocrafter.regions_updated": "Stored regions were updated to match the real crafters.",
   "message.bigcreateautocrafter.region_exists": "This group already is region %s of profile \"%s\" (Ctrl + Shift + right-click removes it).",
   "message.bigcreateautocrafter.region_removed": "Removed region %s from profile \"%s\".",
   "message.bigcreateautocrafter.profile_removed": "Deleted profile \"%s\".",
