@@ -69,15 +69,15 @@ Set up the gauge as usual: the Crushing Wheel as the target, with input gauges f
 
 ## When do I need a Repackager?
 
-Just like in Create itself, the crafting information is only attached to the packages of **one** packager.
+Create attaches the crafting information only to the packages of **one** packager. This mod remembers the recipe of an order, so the other packages of the same order still go into the right crafters.
 
 | Situation | without Repackager | with Repackager |
 |---|---|---|
 | 1 craft, all ingredients from **one** packager | ✅ | ✅ |
-| 1 craft, ingredients from **several** packagers | ❌ | ✅ |
+| 1 craft, ingredients from **several** packagers | ✅ for registered regions (packages without recipe wait for the one with it, up to 5 minutes) | ✅ |
 | **several** crafts in one order | ❌ | ✅ one package per craft |
 
-A Factory Gauge always requests one craft per order, so there it is enough if all ingredients come from one packager.
+A Factory Gauge always requests one craft per order, so it works without a Repackager even when the ingredients come from several storages. If a delivery cannot be put in as ordered, the owner of the crafters gets a chat message instead of a silently wrong craft.
 
 ---
 

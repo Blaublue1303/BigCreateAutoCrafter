@@ -35,6 +35,11 @@ public class ProfileManager extends SavedData {
         return Optional.ofNullable(profiles.get(id));
     }
 
+    /** All profiles of all players. */
+    public List<CrafterProfile> all() {
+        return List.copyOf(profiles.values());
+    }
+
     public List<CrafterProfile> byOwner(UUID owner) {
         return profiles.values().stream().filter(p -> p.owner().equals(owner)).toList();
     }

@@ -15,7 +15,8 @@ import net.minecraft.world.item.crafting.Ingredient;
  *
  * <p>Create crafts from the bounding box of the filled crafters (empty crafters around it are allowed when the group
  * is started by a package), so the recipe may sit anywhere in the region as long as every non-empty recipe cell lands
- * on a crafter. The first fitting offset from the top-left is used, matching Create's own 3×3 behaviour.
+ * on a crafter. With a known exit crafter the fitting offset closest to the exit is used (the result then has the
+ * shortest way out of the group); without one, the first fitting offset from the top-left, like Create's own 3×3.
  */
 public final class RegionPlacer {
     private RegionPlacer() {
@@ -72,14 +73,39 @@ public final class RegionPlacer {
     }
 
     private static Optional<List<Ingredient>> fit(int width, int height, List<Ingredient> cells, CrafterRegion region) {
+        int[] exit = region.exitCell();
+        int bestX = -1;
+        int bestY = -1;
+        long bestScore = Long.MAX_VALUE;
         for (int offsetY = 0; offsetY + height <= region.height(); offsetY++) {
             for (int offsetX = 0; offsetX + width <= region.width(); offsetX++) {
-                if (covers(width, height, cells, region, offsetX, offsetY)) {
+                if (!covers(width, height, cells, region, offsetX, offsetY)) {
+                    continue;
+                }
+                if (exit == null) {
                     return Optional.of(template(width, height, cells, region, offsetX, offsetY));
+                }
+                long score = distanceToExit(width, height, offsetX, offsetY, exit);
+                if (score < bestScore) { // strictly less: the first offset from the top-left wins ties
+                    bestScore = score;
+                    bestX = offsetX;
+                    bestY = offsetY;
                 }
             }
         }
-        return Optional.empty();
+        return bestX < 0 ? Optional.empty() : Optional.of(template(width, height, cells, region, bestX, bestY));
+    }
+
+    /**
+     * Smaller = closer to the exit crafter: first the distance from the exit to the recipe's bounding box, then the
+     * distance from the box's centre to the exit (so a recipe sits next to the exit instead of in a far corner).
+     */
+    private static long distanceToExit(int width, int height, int offsetX, int offsetY, int[] exit) {
+        int dx = Math.max(0, Math.max(offsetX - exit[0], exit[0] - (offsetX + width - 1)));
+        int dy = Math.max(0, Math.max(offsetY - exit[1], exit[1] - (offsetY + height - 1)));
+        int centreX2 = Math.abs(2 * offsetX + width - 1 - 2 * exit[0]);
+        int centreY2 = Math.abs(2 * offsetY + height - 1 - 2 * exit[1]);
+        return (long) (dx + dy) * 1000 + centreX2 + centreY2;
     }
 
     private static boolean covers(int width, int height, List<Ingredient> cells, CrafterRegion region, int offsetX, int offsetY) {

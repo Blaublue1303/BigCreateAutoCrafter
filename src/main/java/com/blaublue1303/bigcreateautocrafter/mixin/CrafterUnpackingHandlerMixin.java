@@ -1,8 +1,14 @@
 package com.blaublue1303.bigcreateautocrafter.mixin;
 
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.blaublue1303.bigcreateautocrafter.compat.create.CreateCompat;
+import com.blaublue1303.bigcreateautocrafter.order.DeliveryWarnings;
 import com.blaublue1303.bigcreateautocrafter.order.LargePatternPackaging;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -12,11 +18,28 @@ import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import com.simibubi.create.impl.unpacking.CrafterUnpackingHandler;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /** For large patterns delivered in several packages, start crafting only when the whole pattern is in the crafters. */
 @Mixin(CrafterUnpackingHandler.class)
 public abstract class CrafterUnpackingHandlerMixin {
+    /**
+     * Refuse to unpack while the controller lists a crafter Create cannot reach (its block entity is gone): Create would
+     * silently drop it and put every later item into the wrong crafter. The package stays in the packager and is
+     * retried; the region's owner is told what is wrong.
+     */
+    @Inject(method = "unpack", at = @At("HEAD"), cancellable = true)
+    private void bcac$onlyUnpackIntoCompleteGroup(Level level, BlockPos pos, BlockState state, Direction side, List<ItemStack> items,
+                                                  PackageOrderWithCrafts orderContext, boolean simulate, CallbackInfoReturnable<Boolean> cir) {
+        if (PackageOrderWithCrafts.hasCraftingInformation(orderContext) && !CreateCompat.isGroupComplete(level, pos)) {
+            DeliveryWarnings.groupIncomplete(level, pos);
+            cir.setReturnValue(false);
+        }
+    }
+
     @WrapOperation(method = "unpack", at = @At(value = "INVOKE",
             target = "Lcom/simibubi/create/content/kinetics/crafter/MechanicalCrafterBlockEntity;checkCompletedRecipe(Z)V"))
     private void bcac$waitForCompletePattern(MechanicalCrafterBlockEntity crafter, boolean poweredStart, Operation<Void> original,

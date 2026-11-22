@@ -7,13 +7,18 @@ import java.util.UUID;
 
 import com.blaublue1303.bigcreateautocrafter.BigCreateAutoCrafter;
 import com.blaublue1303.bigcreateautocrafter.compat.create.ConnectedCrafterGroup;
+import com.blaublue1303.bigcreateautocrafter.compat.create.CreateCompat;
 import com.blaublue1303.bigcreateautocrafter.profile.CrafterProfile;
 import com.blaublue1303.bigcreateautocrafter.profile.CrafterRegion;
+import com.blaublue1303.bigcreateautocrafter.profile.RegionRefresh;
 import com.blaublue1303.bigcreateautocrafter.profile.RegionScanner;
 import com.blaublue1303.bigcreateautocrafter.recipe.GridRecipe;
 import com.blaublue1303.bigcreateautocrafter.recipe.Placement;
 import com.blaublue1303.bigcreateautocrafter.recipe.RegionPlacer;
 import com.mojang.serialization.DataResult;
+import com.simibubi.create.content.kinetics.crafter.MechanicalCrafterBlock;
+
+import net.createmod.catnip.math.Pointing;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -93,6 +98,77 @@ public class RegionGameTests {
         helper.assertTrue(RegionPlacer.templateFor(shapeless4, narrow).isPresent(), "Shapeless 4 must fit 2×2");
         helper.assertTrue(RegionPlacer.templateFor(new GridRecipe(0, 0, Collections.nCopies(5, a), true), narrow).isEmpty(),
                 "Shapeless 5 must not fit 2×2");
+        helper.succeed();
+    }
+
+    /** The exit is the crafter whose arrow leaves the group; it follows the arrows, not the position. */
+    @GameTest(template = TestCrafters.ARENA)
+    public static void findsExitCrafterFromArrows(GameTestHelper helper) {
+        List<String> column = List.of("#", "#", "#");
+        ConnectedCrafterGroup group = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(column));
+        // Create's default arrows all point up: the chain ends in the top crafter (index 0, rows run from the top)
+        helper.assertTrue(CreateCompat.exitIndex(helper.getLevel(), group) == 0,
+                "Default arrows: exit must be the top crafter, got " + CreateCompat.exitIndex(helper.getLevel(), group));
+        for (BlockPos member : group.members()) {
+            helper.getLevel().setBlockAndUpdate(member,
+                    helper.getLevel().getBlockState(member).setValue(MechanicalCrafterBlock.POINTING, Pointing.DOWN));
+        }
+        helper.assertTrue(CreateCompat.exitIndex(helper.getLevel(), group) == 2,
+                "Arrows down: exit must be the bottom crafter, got " + CreateCompat.exitIndex(helper.getLevel(), group));
+        helper.succeed();
+    }
+
+    /** Small recipes sit next to the exit crafter instead of in the top-left corner. */
+    @GameTest(template = TestCrafters.ARENA)
+    public static void placesSmallRecipeNextToExit(GameTestHelper helper) {
+        Ingredient a = Ingredient.of(Items.STONE);
+        GridRecipe full3 = new GridRecipe(3, 3, Collections.nCopies(9, a), false);
+        List<String> layout = ProfileCodecGameTests.LAYOUT_21;
+        // 21 crafters read row by row; the bottom row ".###." holds indices 18..20, so 19 is its middle crafter
+        CrafterRegion bottomExit = new CrafterRegion("21", BlockPos.ZERO, Direction.NORTH, layout, "", 19);
+        helper.assertTrue(java.util.Arrays.equals(bottomExit.exitCell(), new int[] {2, 4}), "Exit cell of index 19 must be (2,4)");
+        List<Ingredient> t = RegionPlacer.templateFor(full3, bottomExit).orElseThrow();
+        helper.assertTrue(t.stream().filter(i -> !i.isEmpty()).count() == 9, "Template must contain 9 items");
+        // the last three crafters (bottom row) are part of the recipe, the whole top row (indices 0..2) stays empty
+        helper.assertTrue(!t.get(18).isEmpty() && !t.get(19).isEmpty() && !t.get(20).isEmpty(), "Bottom row must hold the recipe: " + t);
+        helper.assertTrue(t.get(0).isEmpty() && t.get(1).isEmpty() && t.get(2).isEmpty(), "Top row must stay empty: " + t);
+
+        // unknown exit (old profiles): unchanged, the recipe goes to the first fitting place from the top-left
+        CrafterRegion unknown = new CrafterRegion("21", BlockPos.ZERO, Direction.NORTH, layout, "");
+        List<Ingredient> old = RegionPlacer.templateFor(full3, unknown).orElseThrow();
+        helper.assertTrue(unknown.exitCell() == null && !old.get(0).isEmpty(), "Unknown exit must keep the top-left placement: " + old);
+
+        // a recipe that needs the whole region is not affected by the exit
+        GridRecipe wide = new GridRecipe(5, 3, Collections.nCopies(15, a), false);
+        helper.assertTrue(RegionPlacer.templateFor(wide, bottomExit).isEmpty() == RegionPlacer.templateFor(wide, unknown).isEmpty(),
+                "Fit/no fit must not depend on the exit");
+        helper.succeed();
+    }
+
+    /** A stored region that no longer matches the crafters is corrected from the world, a matching one stays untouched. */
+    @GameTest(template = TestCrafters.ARENA)
+    public static void healsStaleRegion(GameTestHelper helper) {
+        ConnectedCrafterGroup group = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(List.of("#", "#", "#")));
+        CrafterRegion stale = new CrafterRegion("Test", group.controller(), Direction.NORTH, List.of("##", "##"), "keep");
+        RegionRefresh.Result first = RegionRefresh.check(helper.getLevel(), stale);
+        helper.assertTrue(first.state() == RegionRefresh.State.UPDATED && first.region().layout().equals(List.of("#", "#", "#")),
+                "Stale shape must be replaced by the real one: " + first);
+        helper.assertTrue(first.region().name().equals("Test") && first.region().address().equals("keep"), "Name and address must stay");
+        helper.assertTrue(first.region().exit() >= 0, "The exit must be filled in for old regions");
+        helper.assertTrue(RegionRefresh.check(helper.getLevel(), first.region()).state() == RegionRefresh.State.UNCHANGED,
+                "A matching region must stay unchanged");
+        helper.succeed();
+    }
+
+    /** A group with a missing crafter is reported as incomplete, so nothing is unpacked into shifted slots. */
+    @GameTest(template = TestCrafters.ARENA)
+    public static void detectsIncompleteGroup(GameTestHelper helper) {
+        ConnectedCrafterGroup group = TestCrafters.build(helper, Direction.NORTH, TestCrafters.positionsXY(List.of("#", "#", "#")));
+        helper.assertTrue(CreateCompat.isGroupComplete(helper.getLevel(), group.controller()), "A fresh group is complete");
+        // a member Create cannot reach (what an unloaded chunk looks like): its offset is in the controller's list, its crafter is not found
+        var controller = com.simibubi.create.content.kinetics.crafter.CrafterHelper.getCrafter(helper.getLevel(), group.controller());
+        ((com.blaublue1303.bigcreateautocrafter.mixin.ConnectedInputAccessor) controller.getInput()).bcac$getData().add(new BlockPos(7, 0, 0));
+        helper.assertTrue(!CreateCompat.isGroupComplete(helper.getLevel(), group.controller()), "A missing crafter must make the group incomplete");
         helper.succeed();
     }
 

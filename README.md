@@ -1,15 +1,20 @@
 # Big Create Auto Crafter
 
+**English:** An addon for [Create](https://www.curseforge.com/minecraft/mc-mods/create) 6.0.10+ on NeoForge 1.21.1. It lets big Mechanical Crafter setups (e.g. 21 crafters for the Crushing Wheel) work with Create's logistics: order recipes larger than 3×3 from the Stock Keeper with JEI's "+", or let a Factory Gauge keep them in stock. Register a crafter group with Ctrl + right-click; choose it on a tag at the Stock Keeper window. Ingredients may come from several storages without a Repackager: the recipe is shared within an order. Install on client and server; JEI is optional. License: MIT. Player documentation: [`curseforge/description.md`](curseforge/description.md). The developer documentation below is in German.
+
+---
+
 NeoForge-Mod (MC 1.21.1, NeoForge 21.1.250) für das Modpack **Create Exta+ 2.0**: erweitert den Create-Stock-Keeper-Crafting-Ablauf auf größere Mechanical-Crafter-Anlagen.
 
-**Status: Version 0.1.4.** Strg + Rechtsklick registriert Crafter-Anlagen mit mehreren Bereichen. Im Stock Keeper wählst du die Anlage über einen Anhänger am Fenster und verwaltest Profile in einem eigenen Fenster (umbenennen, löschen, Adressen), beides im Stil von Creates Stock Keeper. JEIs „+“ und Factory Gauges craften damit auch große Rezepte, z. B. das Crushing Wheel mit 21 Zutaten. Anleitung und Grenzen stehen in `docs/07-prototyp-1.md`, die CurseForge-Seite (Logo, Beschreibung, Screenshots) in `curseforge/`.
+**Status: Version 0.1.7.** Strg + Rechtsklick registriert Crafter-Anlagen mit mehreren Bereichen. Im Stock Keeper wählst du die Anlage über einen Anhänger am Fenster und verwaltest Profile in einem eigenen Fenster (umbenennen, löschen, Adressen), beides im Stil von Creates Stock Keeper. JEIs „+“ und Factory Gauges craften damit auch große Rezepte, z. B. das Crushing Wheel mit 21 Zutaten. Anleitung und Grenzen stehen in `docs/07-prototyp-1.md`, die CurseForge-Seite (Logo, Beschreibung, Screenshots) in `curseforge/`.
 
 - Kontext für neue (KI-)Sessions: `CLAUDE.md`
+- Englische Spieler-Beschreibung (auch für CurseForge): `curseforge/description.md`
 - Analyse: `docs/01-phase1-analysis.md`, `docs/02-phase2-flow-analysis.md`
 - Plan, Risiken, Umgebung, TODO: `docs/03…06`
 - Bedienung, Test im Spiel, Grenzen: `docs/07-prototyp-1.md`
 - Build: `./gradlew build` (JDK 21)
-- Tests: `./gradlew runGameTestServer` (21 GameTests, headless) und `xvfb-run ./gradlew runClientSmokeTest` (Client)
+- Tests: `./gradlew runGameTestServer` (29 GameTests, headless) und `xvfb-run ./gradlew runClientSmokeTest` (Client)
 - Details zur Umgebung: `docs/05-dev-environment.md`
 
 ## Lizenz
