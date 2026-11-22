@@ -22,7 +22,7 @@ public final class RegionRefresh {
         UNCHANGED,
         /** The crafters changed; {@link Result#region()} is the corrected region. */
         UPDATED,
-        /** Nothing can be said now (chunk not loaded) or the group is gone/incomplete; the region is kept as it is. */
+        /** Nothing can be said now (a chunk of the group is not loaded) or the group is gone/incomplete; the region is kept as it is. */
         UNAVAILABLE
     }
 
@@ -30,7 +30,8 @@ public final class RegionRefresh {
     }
 
     public static Result check(ServerLevel level, CrafterRegion region) {
-        if (!level.isLoaded(region.controller())) {
+        // every 5 s per player: never load chunks for this, only look at groups that are fully loaded anyway
+        if (!CreateCompat.isGroupLoaded(level, region.controller())) {
             return new Result(State.UNAVAILABLE, region);
         }
         Optional<ConnectedCrafterGroup> group = CreateCompat.findConnectedGroup(level, region.controller());

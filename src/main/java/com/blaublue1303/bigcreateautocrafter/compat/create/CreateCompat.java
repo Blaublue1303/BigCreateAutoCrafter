@@ -81,8 +81,10 @@ public final class CreateCompat {
 
     /**
      * {@code false} if the crafter at {@code pos} belongs to a group of which Create can currently not reach every
-     * member (e.g. one part sits in an unloaded chunk). Create's {@code getInventories} then silently drops the missing
-     * crafters, so every later pattern slot would land one crafter too early.
+     * member: the controller still lists a crafter whose block entity is gone (removed without Create noticing, e.g.
+     * by another mod). Unloaded chunks are not a cause: on the server thread reading a block entity loads its chunk.
+     * Create's {@code getInventories} silently drops the missing crafters, so every later pattern slot would land one
+     * crafter too early.
      */
     public static boolean isGroupComplete(Level level, BlockPos pos) {
         MechanicalCrafterBlockEntity clicked = CrafterHelper.getCrafter(level, pos);
@@ -129,6 +131,43 @@ public final class CreateCompat {
             }
         }
         return exit;
+    }
+
+    /** Position of the controller of the crafter group at {@code pos}; empty if there is no crafter there. */
+    public static Optional<BlockPos> controllerPos(Level level, BlockPos pos) {
+        MechanicalCrafterBlockEntity crafter = CrafterHelper.getCrafter(level, pos);
+        return crafter == null ? Optional.empty() : Optional.of(controllerOf(crafter));
+    }
+
+    /**
+     * Whether the chunks of the group at {@code pos} (controller and every member) are loaded. Reading a crafter in an
+     * unloaded chunk would load that chunk, which a periodic check must not do.
+     */
+    public static boolean isGroupLoaded(Level level, BlockPos pos) {
+        if (!level.isLoaded(pos)) {
+            return false;
+        }
+        MechanicalCrafterBlockEntity crafter = CrafterHelper.getCrafter(level, pos);
+        if (crafter == null) {
+            return true; // nothing more to read: the caller finds no group
+        }
+        BlockPos controllerPos = controllerOf(crafter);
+        if (!level.isLoaded(controllerPos)) {
+            return false;
+        }
+        MechanicalCrafterBlockEntity controller = CrafterHelper.getCrafter(level, controllerPos);
+        if (controller == null) {
+            return true;
+        }
+        ConnectedInputAccessor accessor = (ConnectedInputAccessor) controller.getInput();
+        synchronized (accessor.bcac$getData()) {
+            for (BlockPos offset : accessor.bcac$getData()) {
+                if (!level.isLoaded(controllerPos.offset(offset))) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static BlockPos controllerOf(MechanicalCrafterBlockEntity crafter) {

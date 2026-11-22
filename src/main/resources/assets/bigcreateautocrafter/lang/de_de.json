@@ -65,5 +65,8 @@
   "bigcreateautocrafter.factory.region": "Crafter-Bereich: %s",
   "bigcreateautocrafter.factory.ingredients": "%s Zutaten pro Craft",
   "bigcreateautocrafter.factory.per_craft": "%s× %s pro Craft",
-  "bigcreateautocrafter.factory.address_tip": "Pakete gehen an die Adresse der Gauge"
+  "bigcreateautocrafter.factory.address_tip": "Pakete gehen an die Adresse der Gauge",
+  "message.bigcreateautocrafter.delivery_waiting": "„%s“ wartet auf das Paket mit der Rezept-Info. Die Zutaten kommen von mehreren Packagern; die übrigen Pakete werden eingelegt, sobald es da ist.",
+  "message.bigcreateautocrafter.delivery_gave_up": "„%s“: Nach 5 Minuten kam kein Paket mit Rezept-Info. Die Items werden wie bei Create der Reihe nach eingefüllt. Ein Repackager vor der Anlage verhindert das.",
+  "message.bigcreateautocrafter.delivery_incomplete": "„%s“: Nicht alle Crafter der Gruppe sind erreichbar, das Paket wartet. Prüfe die Verbindungen der Crafter; Strg + Rechtsklick gleicht den Bereich neu ab."
 }

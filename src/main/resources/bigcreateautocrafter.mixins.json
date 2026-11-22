@@ -6,7 +6,8 @@
   "mixins": [
     "ConnectedInputAccessor",
     "CrafterUnpackingHandlerMixin",
-    "PackageRepackageHelperMixin"
+    "PackageRepackageHelperMixin",
+    "PackagerBlockEntityMixin"
   ],
   "client": [
     "client.FactoryPanelScreenMixin",

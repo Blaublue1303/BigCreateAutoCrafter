@@ -1,4 +1,4 @@
-# Bedienung, Test im Spiel und Grenzen (Version 0.1.6)
+# Bedienung, Test im Spiel und Grenzen (Version 0.1.7)
 
 | Anhänger am Stock Keeper | Auswahl „Crafter-Anlage“ | Fenster „Crafter-Profile“ |
 |---|---|---|
@@ -43,21 +43,26 @@ Die Oberfläche nutzt Creates eigene Stock-Keeper-Texturen (Papierkarten und Hol
    - **Normale 3×3-Rezepte** bleiben bei Creates 3×3, außer die Gauge schickt an die Paketadresse eines Bereichs.
 6. **Pakete:** Für große Muster packt der Repackager nach Itemtyp, bis zu 64 gleiche Items pro Paket-Slot, damit ein Craft in **ein** Paket passt. Creates Crafter-Entpacker verteilt die Items dann auf die richtigen Crafter.
 
-## Wann ein Repackager nötig ist (wie bei Create selbst)
+## Wann ein Repackager nötig ist
 
-Create legt die Crafting-Informationen nur an die Pakete **eines** Packagers. Sein Crafter-Entpacker nimmt nur Pakete an, deren Items genau in die freien Felder passen. Das gilt für 3×3 genauso wie für große Bereiche:
+Create legt die Crafting-Informationen nur an die Pakete **eines** Packagers. Sein Crafter-Entpacker nimmt nur Pakete an, deren Items genau in die freien Felder passen. Ab 0.1.7 merkt sich die Mod das Rezept eines Auftrags, so dass Pakete ohne Info aus weiteren Packagern trotzdem richtig eingelegt werden:
 
 | Situation | ohne Repackager | mit Repackager |
 |---|---|---|
 | 1 Craft, alle Zutaten aus **einem** Packager | ✅ | ✅ |
-| 1 Craft, Zutaten aus **mehreren** Packagern (z. B. ein Vault pro Item) | ❌ Pakete ohne Info werden der Reihe nach eingefüllt | ✅ |
+| 1 Craft, Zutaten aus **mehreren** Packagern (z. B. ein Vault pro Item) | ✅ ab 0.1.7 für registrierte Bereiche: Pakete ohne Info warten auf das Paket mit Rezept (bis zu 5 Minuten) | ✅ |
 | **mehrere** Crafts in einem Auftrag | ❌ das Paket enthält Items für mehrere Crafts und wird abgelehnt | ✅ ein Paket pro Craft |
 
-Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager genügt es dort also, wenn alle Zutaten aus einem Packager kommen.
+Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager funktioniert sie ab 0.1.7 also auch dann, wenn die Zutaten aus mehreren Lagern kommen.
+
+**Meldungen im Chat** (an den Besitzer der Anlage, höchstens einmal pro Minute):
+- „… wartet auf das Paket mit der Rezept-Info“: Die Zutaten kamen aus mehreren Packagern, das Paket mit Rezept ist noch unterwegs. Das ist normal, solange es nach kurzer Zeit weitergeht.
+- „Nach 5 Minuten kam kein Paket mit Rezept-Info“: Die Items wurden wie bei Create der Reihe nach eingefüllt. Prüfe, ob das erste Paket irgendwo hängt, oder setze einen Repackager davor.
+- „Nicht alle Crafter der Gruppe sind erreichbar“: Ein Crafter fehlt in Creates Gruppe. Verbindungen prüfen, Strg + Rechtsklick gleicht den Bereich ab.
 
 ## So testest du im Spiel
 
-1. Lege `bigcreateautocrafter-0.1.6.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 5, neu in 0.1.5).
+1. Lege `bigcreateautocrafter-0.1.7.jar` auf Client **und** Server in den `mods`-Ordner und entferne die alte JAR. Beide sollten dieselbe Version haben (Netzwerkprotokoll 5, neu in 0.1.5).
 2. Halte Strg und rechtsklicke die 21er-Anlage. Im Chat erscheint die Bestätigung.
 3. **Stock Keeper:**
    1. Öffne den Stock Keeper, klicke den Anhänger links und wähle **Profile verwalten…**.
@@ -73,6 +78,13 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 5. **Verwalten:** Lösche ein Test-Profil im Fenster mit zwei Klicks auf das ×.
 
 ## Änderungen
+
+- **0.1.7:** Zutaten aus mehreren Packagern ohne Repackager. Wahrscheinliche Ursache des Mehrspieler-Fehlers „Rezept kommt nach einiger Zeit falsch an“.
+  - **Ursache (im Create-Code belegt):** Kommen die Zutaten eines Auftrags aus mehreren Lagern, bekommt nur das Paket des ersten Packagers das Rezept. Creates Entpacker füllt die übrigen Pakete der Reihe nach in die Crafter, also an falsche Stellen. Welcher Packager zuerst dran ist, hängt vom Lagerbestand ab, deshalb tritt es erst „nach einiger Zeit“ auf.
+  - **Lösung:** Alle Pakete eines Auftrags tragen dieselbe Auftragsnummer. Die Mod merkt sich das Rezept des ersten Pakets und legt die anderen damit richtig ein. Kommt ein Paket ohne Rezept zuerst an, wartet es im Packager, bis das Rezept da ist (höchstens 5 Minuten). Gilt für registrierte Bereiche; fremde Crafter-Gruppen verhalten sich wie bei Create.
+  - **Meldungen im Chat** an den Besitzer der Anlage, wenn ein Paket wartet oder nicht passt, statt still falsch zu craften.
+  - **Korrektur zu 0.1.6:** Ein nicht geladener Chunk war nicht die Ursache (Minecraft lädt ihn beim Lesen nach). Der Schutz gegen fehlende Crafter bleibt, meldet sich jetzt aber beim Besitzer. Der Abgleich alle 5 Sekunden lädt keine Chunks mehr nach.
+  - Vier neue GameTests (29), darunter einer über einen echten Packager.
 
 - **0.1.6:** Gespeicherte Bereiche bleiben passend zur echten Anlage (Multiplayer-Fehler „Rezept kommt nach einiger Zeit falsch an“).
   - **Ursache:** Create lässt in `getInventories` Crafter, die es gerade nicht erreicht (z. B. Teil der Anlage in einem nicht geladenen Chunk), still weg. Dann rutschen alle späteren Zutaten einen Crafter nach vorn. Außerdem war das gespeicherte Raster nur eine Momentaufnahme vom Registrieren.
@@ -116,7 +128,7 @@ Eine Factory Gauge fordert immer **einen** Craft pro Auftrag an. Ohne Repackager
 ## Grenzen
 
 - **Echtes Craften mit Factory Gauges ist im Spiel noch nicht bestätigt.**
-  - Geprüft sind die Server-Logik (25 GameTests, darunter Bereichswahl, Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Anhänger, Panel, Profilfenster, echte Factory Gauge bis zum gespeicherten Muster auf dem Server).
+  - Geprüft sind die Server-Logik (29 GameTests, darunter Bereichswahl, Rezeptsuche und Muster mit dem echten Crushing-Wheel-Rezept) und der Client (Smoke-Test: beide Client-Mixins, Anhänger, Panel, Profilfenster, echte Factory Gauge bis zum gespeicherten Muster auf dem Server).
   - Nicht getestet ist das Bestellen und Craften mit echten Paketwegen. Den Stock-Keeper-Weg hast du mit 0.0.2 im Spiel bestätigt, er nutzt dasselbe Muster-Format.
 - **Gauge und Bereich müssen demselben Spieler gehören.** Der Client kennt nur die eigenen Profile.
 - **Höchstens 9 verschiedene Itemtypen pro Auftrag** (Create-Limit, unverändert).

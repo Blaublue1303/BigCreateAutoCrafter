@@ -65,5 +65,8 @@
   "bigcreateautocrafter.factory.region": "Crafter region: %s",
   "bigcreateautocrafter.factory.ingredients": "%s ingredients per craft",
   "bigcreateautocrafter.factory.per_craft": "%s× %s per craft",
-  "bigcreateautocrafter.factory.address_tip": "Packages go to the gauge's address"
+  "bigcreateautocrafter.factory.address_tip": "Packages go to the gauge's address",
+  "message.bigcreateautocrafter.delivery_waiting": "\"%s\" is waiting for the package with the recipe info. The ingredients come from several packagers; the other packages are put in once it has arrived.",
+  "message.bigcreateautocrafter.delivery_gave_up": "\"%s\": no package with the recipe info arrived within 5 minutes. The items are filled in one after another, as Create does. A Repackager in front of the crafters prevents this.",
+  "message.bigcreateautocrafter.delivery_incomplete": "\"%s\": not every crafter of the group can be reached, the package waits. Check the crafter connections; Ctrl + right-click updates the region."
 }

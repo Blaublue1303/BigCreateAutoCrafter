@@ -1,13 +1,13 @@
 # Kontext für neue Sessions – Big Create Auto Crafter
 
-Stand: 2026-11-04, Version **0.1.6** (`gradle.properties` → `mod_version`). Diese Datei fasst alles zusammen, was eine neue Session wissen muss. Ausführliche Doku in `docs/01…07`, CurseForge-Material in `curseforge/`.
+Stand: 2026-11-22, Version **0.1.7** (`gradle.properties` → `mod_version`). Diese Datei fasst alles zusammen, was eine neue Session wissen muss. Ausführliche Doku in `docs/01…07`, CurseForge-Material in `curseforge/`.
 
 ## 1. Worum es geht
 
 - NeoForge-Mod für **Minecraft 1.21.1** und **Create 6.0.10**. Gebaut für das Modpack **Create Exta+ 2.0** des Nutzers.
 - **Ziel:** Creates Crafting-Ablauf (Stock Keeper mit JEI-„+“, Factory Gauges) funktioniert auch mit großen Mechanical-Crafter-Anlagen. Beispiel: Crushing Wheel mit 21 Zutaten auf einer 5×5-Anlage ohne Ecken.
 - **Profile:** Strg + Rechtsklick auf einen Mechanical Crafter registriert die ganze verbundene Crafter-Gruppe als **Bereich** (Region) eines **Profils**. Ein Profil kann mehrere Bereiche haben, z. B. 21er-Wand plus 3×3-Feld.
-- **Repository:** https://github.com/Blaublue1303/BigCreateAutoCrafter (öffentlich). `main` enthält alles; PR #1 und #2 sind gemerged.
+- **Repository:** https://github.com/Blaublue1303/BigCreateAutoCrafter (öffentlich). `main` steht auf 0.1.4 (PR #1–#3 gemerged). 0.1.5–0.1.7 liegen auf Zweigen, siehe Abschnitt 11.
 - **Lizenz:** MIT (`LICENSE`, auch in der JAR als `LICENSE_bigcreateautocrafter`).
 
 ## 2. Der Nutzer und wie wir zusammenarbeiten
@@ -58,10 +58,11 @@ Stand: 2026-11-04, Version **0.1.6** (`gradle.properties` → `mod_version`). Di
    - Datapack-Profile
    - Client-Config für die Anhänger-Position
    - Test im vollständigen Modpack (Mixin-Konflikte R7)
-3b. **Multiplayer-Fehler (vom Nutzer gemeldet, Stand 2026-11-04), behoben in 0.1.6, vom Nutzer noch nicht bestätigt:** Auf dem Server (Crafty „Server 2.1“, NeoForge 21.1.250, Create 6.0.10, JEI 19.54.0.429, dazu Sable und Create Aeronautics) kam das Rezept nach einiger Zeit falsch an.
-   - **Ursache (belegt per `javap`):** Creates `CrafterUnpackingHandler.unpack` nimmt `Math.min(getInventories.size(), pattern.size())`. `getInventories` wirft nicht erreichbare Crafter (`filter(nonNull)`, z. B. nicht geladener Chunk) still weg, danach rutschen alle Plätze um eins.
-   - **Fix:** `CrafterUnpackingHandlerMixin` (HEAD von `unpack`) lehnt das Entpacken ab, solange `CreateCompat.isGroupComplete` false ist. `RegionRefresh` plus `ProfileService.onPlayerTick` (alle 100 Ticks) gleichen gespeicherte Bereiche mit den echten Craftern ab und speichern korrigierte; Strg + Rechtsklick auf einen vorhandenen Bereich tut dasselbe.
-   - Falls der Fehler weiter auftritt: Server-Log nach „not fully loaded“ und „stored shape updated“ durchsuchen. Die Profildatei `world/data/bigcreateautocrafter_profiles.dat` ist gzip-NBT und über die Crafty-API nicht lesbar.
+3b. **Multiplayer-Fehler (vom Nutzer gemeldet, Stand 2026-11-04), vom Nutzer noch nicht bestätigt behoben:** Auf dem Server (Crafty „Server 2.1“, NeoForge 21.1.250, Create 6.0.10, JEI 19.54.0.429, dazu Sable und Create Aeronautics) kam das Rezept nach einiger Zeit falsch an.
+   - **0.1.6 (andere Session):** Schutz gegen unvollständige Gruppen (`CrafterUnpackingHandlerMixin` HEAD, `CreateCompat.isGroupComplete`) und Selbstheilung der Bereiche (`RegionRefresh`, `ProfileService.onPlayerTick` alle 100 Ticks). Die dort genannte Ursache „nicht geladener Chunk“ stimmt **nicht**: `Level.getBlockEntity` lädt auf dem Server-Thread den Chunk nach (geprüft in den NeoForge-Quellen). Der Schutz greift nur, wenn der Controller einen Crafter listet, dessen BlockEntity fehlt.
+   - **Wahrscheinlichste Ursache (belegt im Create-Code, `LogisticsManager.findPackagersForRequest`):** Kommen die Zutaten eines Auftrags aus mehreren Packagern (Lager), bekommt nur das erste Paket die Rezept-Info (`context = null` nach dem ersten Link). Die übrigen Pakete füllt Creates Entpacker der Reihe nach in die Crafter. Welcher Packager zuerst kommt, hängt vom Lagerbestand ab, deshalb „nach einiger Zeit“.
+   - **Fix 0.1.7 (`order/SplitOrderUnpacking`, Mixin `PackagerBlockEntityMixin` auf `unwrapBox`):** Alle Pakete eines Auftrags tragen dieselbe Order-ID. Das Rezept des ersten Pakets wird pro Crafter-Gruppe und Order-ID gemerkt (10 min) und für die Pakete ohne Rezept benutzt. Kommt ein Paket ohne Rezept zuerst an einen registrierten Bereich, wartet es (bleibt im Packager) bis zu 5 min, danach Create-Verhalten plus Warnung. Fremde, nicht registrierte Gruppen behalten Creates Verhalten. Meldungen an den Besitzer: `order/DeliveryWarnings`.
+   - Falls der Fehler weiter auftritt: Server-Log nach „Crafter group“ (Warnungen aus `DeliveryWarnings`) und „stored shape updated“ durchsuchen. Die Profildatei `world/data/bigcreateautocrafter_profiles.dat` ist gzip-NBT und über die Crafty-API nicht lesbar. Aus Cloud-Sessions ist der Crafty-Server nicht erreichbar („fetch failed“).
 4. **Unbestätigt:** JEI-Version des Packs (CurseForge-fileID 8857687). Wir bauen gegen JEI 19.70.0.468 und nutzen nur Transfer-API, die es in allen 19.x gibt.
 5. **Optional:** englische README für Besucher von CurseForge (README und Doku sind deutsch).
 
@@ -87,7 +88,7 @@ Stand: 2026-11-04, Version **0.1.6** (`gradle.properties` → `mod_version`). Di
 ## 6. Befehle und Tests
 
 - `./gradlew build`: JAR in `build/libs/bigcreateautocrafter-<version>.jar`.
-- `./gradlew runGameTestServer`: **25 GameTests**, headless. Laufen auch in der CI (`.github/workflows/build.yml`: build + GameTests bei jedem Push/PR).
+- `./gradlew runGameTestServer`: **29 GameTests**, headless. Laufen auch in der CI (`.github/workflows/build.yml`: build + GameTests bei jedem Push/PR).
 - Client-Smoke-Test (lokal, nicht in CI, ca. 4 Minuten):
   `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientSmokeTest`
   - Fenster 1600×900, GUI-Skalierung 3. Ergebnis in `run-smoketest/bcac-smoketest.txt` (`RESULT PASS`), Screenshots in `run-smoketest/screenshots/`.
@@ -109,15 +110,15 @@ Stand: 2026-11-04, Version **0.1.6** (`gradle.properties` → `mod_version`). Di
 | Bereich | Dateien | Aufgabe |
 |---|---|---|
 | Einstieg | `BigCreateAutoCrafter.java`, `client/BigCreateAutoCrafterClient.java`, `Config.java` | Events registrieren (Mod-Bus / NeoForge-Bus), Server-Config, Client-Listener |
-| Profile | `profile/CrafterRegion.java`, `CrafterProfile.java` (Records mit Codec + StreamCodec), `ProfileManager.java` (SavedData), `ProfileService.java` (Strg-Klick, Umbenennen, Adresse, Löschen, aktives Profil), `Feedback.java`, `BcacCommands.java` (`/bcac list/select/rename/address/delete`), `RegionScanner.java` (Gruppe → Layout wie `".###."`), `ProfileSync.java` |
+| Profile | `profile/CrafterRegion.java` (mit `exit` = Ausgangs-Crafter, ab 0.1.5), `CrafterProfile.java` (Records mit Codec + StreamCodec), `ProfileManager.java` (SavedData), `ProfileService.java` (Strg-Klick, Umbenennen, Adresse, Löschen, aktives Profil, Abgleich alle 5 s), `RegionRefresh.java` (Bereich gegen echte Crafter prüfen, lädt keine Chunks), `RegionOwners.java` (wem gehört eine Gruppe), `Feedback.java`, `BcacCommands.java` (`/bcac list/select/rename/address/delete`), `RegionScanner.java` (Gruppe → Layout wie `".###."`), `ProfileSync.java` |
 | Netzwerk | `net/BcacNetwork.java`, `SyncProfilesPayload` (S2C), `CrafterClickPayload` (C2S), `EditProfilePayload` (C2S: RENAME, DELETE, SET_ADDRESS, REMOVE_REGION) |
 | Create-Anbindung | `compat/create/CreateCompat.java`, `ConnectedCrafterGroup.java`, `mixin/ConnectedInputAccessor.java` | verbundene Crafter-Gruppe in Creates Inventar-Reihenfolge lesen |
 | Rezepte | `recipe/GridRecipe.java`, `RegionPlacer.java` (Platzierung, Auto = kleinster passender Bereich), `Placement.java`, `PatternBuilder.java`, `RegionCraftable.java`, `FactoryArrangements.java` (Gauge: Zielbereich, Muster, Rezeptsuche) |
-| Pakete | `order/LargePatternPackaging.java` | große Muster nach Itemtyp verpacken, Start erst bei vollem Raster |
-| Mixins | `mixin/PackageRepackageHelperMixin.java`, `CrafterUnpackingHandlerMixin.java`, `client/StockKeeperRequestScreenMixin.java`, `client/FactoryPanelScreenMixin.java`; Config `bigcreateautocrafter.mixins.json` (`defaultRequire: 1`) |
+| Pakete | `order/LargePatternPackaging.java`, `SplitOrderUnpacking.java`, `DeliveryWarnings.java` | große Muster nach Itemtyp verpacken, Start erst bei vollem Raster; Rezept innerhalb eines Auftrags teilen; Meldungen an den Besitzer |
+| Mixins | `mixin/PackageRepackageHelperMixin.java`, `CrafterUnpackingHandlerMixin.java`, `PackagerBlockEntityMixin.java`, `client/StockKeeperRequestScreenMixin.java`, `client/FactoryPanelScreenMixin.java`; Config `bigcreateautocrafter.mixins.json` (`defaultRequire: 1`) |
 | JEI | `compat/jei/BcacJeiPlugin.java`, `RegionTransferHandler.java`, `JeiSmokeCheck.java` |
 | Client-UI | `client/ClientSelection.java`, `ProfileSelector.java` (Anhänger + Panel am Stock Keeper über ScreenEvents), `ProfileManagerScreen.java`, `CreateUi.java`, `ClientProfileCache.java`, `CrafterClickHandler.java`, `BcacKeyMappings.java` (Strg-Modifier, Taste fürs Profilfenster, standardmäßig nicht belegt) |
-| Tests | `gametest/*` (6 Klassen + `TestCrafters`, Arena `data/bigcreateautocrafter/structure/empty7.nbt`), `client/smoketest/ClientSmokeTest.java`, `Showcase.java` |
+| Tests | `gametest/*` (7 Klassen + `TestCrafters`, Arena `data/bigcreateautocrafter/structure/empty7.nbt`), `client/smoketest/ClientSmokeTest.java`, `Showcase.java` |
 | Sprache | `assets/bigcreateautocrafter/lang/de_de.json`, `en_us.json` (Schlüssel `message.*`, `bigcreateautocrafter.selector.*`, `.manager.*`, `.factory.*`, `.transfer.*`, `key.*`) |
 
 ## 8. Wie es funktioniert (mit Create-Interna)
@@ -145,8 +146,13 @@ Stand: 2026-11-04, Version **0.1.6** (`gradle.properties` → `mod_version`). Di
   3. 3×3-Rezepte bleiben bei Create, außer die Adresse passt zu einem Bereich.
 - **Server:** `FactoryPanelBehaviour.tickRequests` fordert `connection.amount` pro Eingang an und schickt `PackageOrderWithCrafts.singleRecipe(activeCraftingArrangement)` mit. Gespeichert wird das Muster in NBT als `"Craft"`.
 
+### Pakete eines Auftrags aus mehreren Packagern (ab 0.1.7)
+- `PackagerBlockEntityMixin` wickelt in `PackagerBlockEntity.unwrapBox` den Aufruf `UnpackingHandler.unpack` ein, weil nur dort das ganze Paket (mit Order-ID) bekannt ist. Die Logik steht in `SplitOrderUnpacking` (gemerktes Rezept pro Dimension + Controller + Order-ID).
+- Gibt `unpack` `false` zurück, behält der Packager das Paket (bzw. der Frogport/das Band davor) und versucht es erneut.
+
 ### Wann ein Repackager nötig ist
-Wie bei Create selbst: Kommen die Zutaten von mehreren Packagern oder enthält ein Auftrag mehrere Crafts, braucht man einen Repackager. Eine Gauge fordert immer einen Craft pro Auftrag an.
+- **Ein Craft, Zutaten aus mehreren Packagern:** ab 0.1.7 ohne Repackager für registrierte Bereiche (das Paket mit Rezept muss innerhalb von 5 min ankommen).
+- **Mehrere Crafts in einem Auftrag:** weiter nur mit Repackager (sonst enthält ein Paket Items für mehrere Crafts und wird abgelehnt). Eine Gauge fordert immer einen Craft pro Auftrag an.
 
 ## 9. Oberfläche im Create-Stil (wichtig für jede UI-Änderung)
 
@@ -177,6 +183,7 @@ Wie bei Create selbst: Kommen die Zutaten von mehreren Packagern oder enthält e
 
 - **0.0.2:** `PatternBuilder` hat die Bestellliste des Aufrufers heruntergezählt. Create schickte den Auftrag deshalb ohne Crafting-Info, und die Crafter wurden der Reihe nach gefüllt. **Lehre:** Eingaben nie verändern, sondern mit `BigItemStack.duplicateWrappers` kopieren. Regressionstest in `LogisticsGameTests`.
 - **0.1.2:** Die Gauge bestellte 1/1/1. Die Gauge-Adresse musste exakt die Bereichsadresse sein, sonst wurde das Crafting still abgeschaltet. **Lehre:** keine stillen Abschaltungen, Mengen sichtbar machen, Bereich automatisch wählen. Zusätzlich: `@At("TAIL")` erreicht nur den letzten `return` (vorher im Bytecode mit `javap -c` prüfen).
+- **0.1.6/0.1.7:** Ursachen erst im Code belegen, dann beheben. „Nicht geladener Chunk“ war eine Vermutung, die nicht stimmte. Periodische Prüfungen dürfen keine Chunks laden (`CreateCompat.isGroupLoaded`).
 - **Smoke-Test-Erkenntnisse:**
   - Der Stock-Keeper-Screen braucht einen Blaze Burner.
   - Der Client kennt ein frisch gesetztes BlockEntity erst nach dem Sync, also ein paar Ticks warten, bevor sein Fenster geöffnet wird.
@@ -185,7 +192,10 @@ Wie bei Create selbst: Kommen die Zutaten von mehreren Packagern oder enthält e
 
 ## 11. Git und GitHub
 
-- **Arbeitszweig:** `claude/create-mechanical-crafter-mod-48gom2` (steht auf `main`).
+- **Zweige (Stand 2026-11-22):**
+  - `main`: 0.1.4.
+  - `feature/place-at-output`: 0.1.5/0.1.6 einer anderen Session (vom Nutzer-Konto committet), ohne PR.
+  - `claude/create-mechanical-crafter-mod-48gom2`: baut darauf auf, 0.1.7. PR nach `main` als Draft, Merge erst nach Zustimmung des Nutzers.
 - **Neue Arbeit:**
   1. Zweig von `main` neu aufsetzen, falls der PR des Zweigs schon gemerged ist.
   2. Committen und pushen.
