@@ -64,7 +64,7 @@ Stand: 2026-11-22, Version **0.1.7** (`gradle.properties` → `mod_version`). Di
    - **Fix 0.1.7 (`order/SplitOrderUnpacking`, Mixin `PackagerBlockEntityMixin` auf `unwrapBox`):** Alle Pakete eines Auftrags tragen dieselbe Order-ID. Das Rezept des ersten Pakets wird pro Crafter-Gruppe und Order-ID gemerkt (10 min) und für die Pakete ohne Rezept benutzt. Kommt ein Paket ohne Rezept zuerst an einen registrierten Bereich, wartet es (bleibt im Packager) bis zu 5 min, danach Create-Verhalten plus Warnung. Fremde, nicht registrierte Gruppen behalten Creates Verhalten. Meldungen an den Besitzer: `order/DeliveryWarnings`.
    - Falls der Fehler weiter auftritt: Server-Log nach „Crafter group“ (Warnungen aus `DeliveryWarnings`) und „stored shape updated“ durchsuchen. Die Profildatei `world/data/bigcreateautocrafter_profiles.dat` ist gzip-NBT und über die Crafty-API nicht lesbar. Aus Cloud-Sessions ist der Crafty-Server nicht erreichbar („fetch failed“).
 4. **Unbestätigt:** JEI-Version des Packs (CurseForge-fileID 8857687). Wir bauen gegen JEI 19.70.0.468 und nutzen nur Transfer-API, die es in allen 19.x gibt.
-5. **Optional:** englische README für Besucher von CurseForge (README und Doku sind deutsch).
+5. **Erledigt (0.1.7):** englische Kurzfassung oben in der README; ausführliche Spieler-Doku auf Englisch in `curseforge/description.md`.
 
 ## 5. Technik und Versionen
 
